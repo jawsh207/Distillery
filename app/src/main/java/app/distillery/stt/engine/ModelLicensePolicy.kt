@@ -11,7 +11,7 @@ class ModelPolicyException(message: String) : SecurityException(message)
  * Keeps Distillery to open-source models only.
  *
  * Distillery is GPL-3.0 and must not ship, download or load anything under the
- * Moonshine AI Community License. Moonshine's LICENSE (v0.1.6) says the only
+ * Moonshine AI Community License. Moonshine's LICENSE (v0.1.5) says the only
  * non-MIT speech models are the legacy *non-streaming* models for languages
  * other than English. So a model is allowed only when it is all of:
  *

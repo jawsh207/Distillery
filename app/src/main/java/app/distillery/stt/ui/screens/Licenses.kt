@@ -48,7 +48,7 @@ object OssLicenses {
             "Speech engine (native code)",
             listOf(
                 OssComponent(
-                    "moonshine", "Moonshine Voice 0.1.6", "Useful Sensors, Inc. (dba Moonshine AI)",
+                    "moonshine", "Moonshine Voice 0.1.5", "Useful Sensors, Inc. (dba Moonshine AI)",
                     "MIT", "MIT-moonshine.txt",
                 ),
                 OssComponent(

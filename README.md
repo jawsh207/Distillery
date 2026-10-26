@@ -165,7 +165,7 @@ calling app ──SpeechRecognizer──▶ system_server ──binds──▶ D
 | Small Streaming (English) | 123 M | 7.84% | MIT |
 | Medium Streaming (English) | 245 M | 6.65% | MIT |
 
-Figures and licenses are from Moonshine v0.1.6 (`docs/models/available-models.md` and `LICENSE`).
+Figures and licenses are from Moonshine v0.1.5 (`docs/models/available-models.md` and `LICENSE`).
 Moonshine's LICENSE states that every streaming speech model and every English model is MIT; the only
 non-MIT speech models are legacy *non-streaming* models for other languages, under the non-commercial
 Moonshine AI Community License. Distillery never offers, downloads or loads those: the catalog is an

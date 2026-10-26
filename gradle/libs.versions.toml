@@ -4,7 +4,7 @@ kotlin = "2.2.20"
 coroutines = "1.10.2"
 
 # Moonshine Voice (MIT). Keep in step with the tag used for source builds.
-moonshineVoice = "0.1.6"
+moonshineVoice = "0.1.5"
 
 # Compose. The BOM pins the core Compose libraries; material3 is pinned
 # separately to the 1.5 line because Material 3 Expressive

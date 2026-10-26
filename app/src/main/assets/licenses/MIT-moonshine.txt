@@ -1,5 +1,5 @@
 Moonshine Voice library and speech models
-https://github.com/moonshine-ai/moonshine (v0.1.6)
+https://github.com/moonshine-ai/moonshine (v0.1.5)
 
 Licensing summary from Moonshine's LICENSE file:
 

@@ -15,10 +15,10 @@ enum class ModelLicense(val spdx: String, val isOpenSource: Boolean) {
  * The speech models Distillery can use: Moonshine's English streaming models.
  *
  * Figures are from Moonshine's published model table (docs/models/available-models.md,
- * v0.1.6). WER is the Open ASR Leaderboard average for the floating-point model;
+ * v0.1.5). WER is the Open ASR Leaderboard average for the floating-point model;
  * the quantized files Distillery downloads score slightly higher.
  *
- * License: Moonshine's LICENSE (v0.1.6) states that every streaming
+ * License: Moonshine's LICENSE (v0.1.5) states that every streaming
  * speech-to-text model and every English model is MIT; only the legacy
  * non-streaming models for other languages are under the Community License.
  * All three entries here are English *and* streaming, so they're MIT on both

@@ -25,7 +25,7 @@ Settings include Moonshine's Android binding as a composite build when
 ```sh
 # 1. Moonshine at the tag matching moonshineVoice in gradle/libs.versions.toml
 git submodule add https://github.com/moonshine-ai/moonshine third_party/moonshine
-git -C third_party/moonshine checkout v0.1.6
+git -C third_party/moonshine checkout v0.1.5
 
 # 2. Remove the vendored ONNX Runtime binaries and rebuild them from source.
 #    The script clones onnxruntime v1.23.2 into $MOONSHINE_ORT_ROOT and builds a
