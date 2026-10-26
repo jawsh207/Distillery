@@ -2,8 +2,8 @@
 
 ## Requirements
 
-- JDK 17
-- Android SDK with platform 36 (Android 16)
+- JDK 17 or newer
+- Android SDK with platform 37 (the app targets and runs on Android 16+)
 - For the from-source build only: Android NDK 28.2.13676358, CMake 3.22+, Ninja, Python 3
 
 ## Quick build (prebuilt Moonshine from Maven Central)

@@ -1,12 +1,13 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
 
 android {
     namespace = "app.distillery.stt"
-    compileSdk = 36
+    // Current Compose and Material 3 releases require compiling against API 37.
+    // The app still runs on Android 16 (minSdk 36).
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "app.distillery.stt"
@@ -57,12 +58,6 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
-    }
-}
-
-kotlin {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 

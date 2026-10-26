@@ -1,6 +1,6 @@
 [versions]
-agp = "8.13.2"
-kotlin = "2.2.20"
+agp = "9.2.1"
+kotlin = "2.4.0"
 coroutines = "1.10.2"
 
 # Moonshine Voice (MIT). Keep in step with the tag used for source builds.
@@ -45,5 +45,4 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
