@@ -58,9 +58,16 @@ jobs:
 
       - name: Check signature
         run: |
-          APK=$(ls app/build/outputs/apk/release/*.apk | grep -v unsigned | head -1)
-          test -n "$APK" || { echo "::error::No signed APK was produced"; exit 1; }
-          "$ANDROID_HOME"/build-tools/*/apksigner verify --print-certs "$APK" | grep -E 'SHA-256|DN'
+          ls -la app/build/outputs/apk/release/
+          APK=$(ls app/build/outputs/apk/release/*.apk 2>/dev/null | grep -v unsigned | head -1)
+          if [ -z "$APK" ]; then
+            echo "::error::No signed APK was produced: $(ls app/build/outputs/apk/release/ | tr '\n' ' ')"; exit 1
+          fi
+          APKSIGNER=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner
+          if ! OUT=$("$APKSIGNER" verify --print-certs "$APK" 2>&1); then
+            echo "::error::apksigner failed: $(echo "$OUT" | tr '\n' ' ')"; exit 1
+          fi
+          echo "$OUT"
           VERSION=$(grep -m1 'versionName' app/build.gradle.kts | sed -E 's/.*"(.*)".*/\1/')
           cp "$APK" "Distillery-$VERSION.apk"
           echo "APK_NAME=Distillery-$VERSION.apk" >> "$GITHUB_ENV"
