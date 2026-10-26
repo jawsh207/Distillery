@@ -32,8 +32,9 @@ jobs:
         if: failure()
         run: |
           # Compiler errors and Gradle's failure summary, as one annotation.
-          grep -E '^e: |What went wrong|^> |Could not|error:|FAILED|Execution failed' build.log \
-            | head -150 | sed 's/%/%25/g' | awk 'BEGIN{ORS="%0A"} {print}' > errors.txt || true
+          { grep -E '^e: ' build.log | head -100
+            awk '/What went wrong/{on=1} /^\* Try:/{on=0} on' build.log | head -80; } \
+            | sed 's/%/%25/g' | awk 'BEGIN{ORS="%0A"} {print}' > errors.txt || true
           echo "::error title=Gradle build failed::$(cat errors.txt)"
 
       - name: Upload APK
