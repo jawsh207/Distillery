@@ -19,7 +19,7 @@ jobs:
 
       - uses: android-actions/setup-android@v3
         with:
-          packages: "platforms;android-37"
+          packages: "platform-tools"  # AGP downloads the compile SDK it needs
 
       - uses: gradle/actions/setup-gradle@v4
 
