@@ -95,14 +95,10 @@ fun SectionCard(
     tone: Tone = Tone.Neutral,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val colors = when (tone) {
-        Tone.Neutral -> CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
-        Tone.Good -> CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
-        Tone.Action -> CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        )
-    }
+    // Every card shares one background so text and buttons keep their contrast
+    // in light and dark themes. The status shows in the badge: a check once a
+    // step is done.
+    val colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
@@ -110,7 +106,7 @@ fun SectionCard(
     ) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconBadge(icon, tone)
+                IconBadge(if (tone == Tone.Good) R.drawable.ic_check_circle else icon, tone)
                 Text(
                     title,
                     style = MaterialTheme.typography.titleLarge,
