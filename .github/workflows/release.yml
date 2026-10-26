@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # full history, for the list of changes since the last release
 
       - uses: actions/setup-java@v5
         with:
@@ -92,8 +94,30 @@ jobs:
             echo "::error::Release $TAG already exists. Bump versionCode and versionName first."; exit 1
           fi
           CODE=$(grep -m1 'versionCode' app/build.gradle.kts | grep -oE '[0-9]+')
-          NOTES="fastlane/metadata/android/en-US/changelogs/$CODE.txt"
+          SUMMARY="fastlane/metadata/android/en-US/changelogs/$CODE.txt"
+          if [ ! -s "$SUMMARY" ]; then
+            echo "::error::Missing $SUMMARY. Add a short summary of this release first."; exit 1
+          fi
+
+          # Release page: the summary, then every change since the previous release.
+          PREV=$(git tag --list 'v*' --sort=-v:refname | grep -vx "$TAG" | head -1)
+          RANGE=${PREV:+$PREV..}$GITHUB_SHA
+          {
+            echo "## What's new"
+            echo
+            cat "$SUMMARY"
+            echo
+            echo "## Changes"
+            echo
+            git log --no-merges --reverse --format='- %s' "$RANGE"
+            echo
+            if [ -n "$PREV" ]; then
+              echo "**Full changelog:** https://github.com/$GITHUB_REPOSITORY/compare/$PREV...$TAG"
+            fi
+          } > release-notes.md
+          cat release-notes.md
+
           gh release create "$TAG" "$APK_NAME" \
             --target "$GITHUB_SHA" \
             --title "Distillery $VERSION" \
-            --notes-file "$NOTES"
+            --notes-file release-notes.md

@@ -83,7 +83,9 @@ pushed, or by hand from the Actions tab. It needs four repository secrets
 | `RELEASE_KEY_PASSWORD` | the key password (same as the keystore password) |
 
 To release: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add
-`fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`, then
+`fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (a short summary for users; it's
+also shown in F-Droid). The release page shows that summary followed by every commit since the
+previous release, generated automatically. Then
 
 ```sh
 git push origin main:release
