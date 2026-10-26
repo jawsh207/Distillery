@@ -231,7 +231,7 @@ private fun DefaultVoiceInputCard(isDefault: Boolean, context: Context) {
             Steps(
                 "Tap Open voice input settings.",
                 "Choose “Distillery (Moonshine, on-device)”.",
-                "Come back here; this card turns green.",
+                "Come back here; this card shows a check.",
             )
             Button(onClick = { VoiceInputSetup.openVoiceInputSettings(context) }, shapes = ButtonDefaults.shapes()) {
                 Icon(painterResource(R.drawable.ic_open_in_new), contentDescription = null, modifier = Modifier.size(18.dp))
@@ -244,7 +244,8 @@ private fun DefaultVoiceInputCard(isDefault: Boolean, context: Context) {
         AnimatedVisibility(showHelp) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 BodyText(
-                    "The picker is usually under Settings › System › Languages › Voice input (the path varies by phone). " +
+                    "On GrapheneOS it's under Settings › System › Language & region › Speech. On other phones look for " +
+                        "Voice input or Speech under Settings › System › Languages. " +
                         "On some phones the digital assistant controls voice input and resets it; set Digital assistant app to None, " +
                         "or set it from a computer with ADB:",
                 )

@@ -117,8 +117,12 @@ Distillery also answers `checkRecognitionSupport` and `triggerModelDownload`.
 
 ## Making Distillery the default voice input
 
-The app walks through this. In short: Settings › System › Languages › **Voice input** (the path varies
-by phone) and pick **Distillery (Moonshine, on-device)**. If the phone's digital assistant keeps
+The app walks through this. Open the system speech settings and pick
+**Distillery (Moonshine, on-device)**:
+
+- GrapheneOS: Settings › System › Language & region › **Speech**
+- Other phones: usually Settings › System › Languages › **Voice input** or **Speech** (varies by phone)
+If the phone's digital assistant keeps
 resetting it, set the assistant to None, or use ADB:
 
 ```sh
