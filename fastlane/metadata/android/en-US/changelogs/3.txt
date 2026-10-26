@@ -1,0 +1,1 @@
+Setup help now shows where to set the default voice input on GrapheneOS (Settings › System › Language & region › Speech), and the default voice input card shows a check once Distillery is selected.
