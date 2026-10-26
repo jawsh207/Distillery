@@ -122,8 +122,8 @@ The app walks through this. Open the system speech settings and pick
 
 - GrapheneOS: Settings › System › Language & region › **Speech**
 - Other phones: usually Settings › System › Languages › **Voice input** or **Speech** (varies by phone)
-If the phone's digital assistant keeps
-resetting it, set the assistant to None, or use ADB:
+
+If the phone's digital assistant keeps resetting it, set the assistant to None, or use ADB:
 
 ```sh
 adb shell settings put secure voice_recognition_service app.distillery.stt/.service.DistilleryRecognitionService
