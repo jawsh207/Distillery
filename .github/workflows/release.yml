@@ -1,9 +1,11 @@
 name: Release
 
-# Builds a signed release APK and publishes it as a GitHub release.
-# Run it by pushing a tag such as v0.1.0, or manually from the Actions tab.
+# Builds a signed release APK and publishes it as a GitHub release tagged
+# v<versionName>. Start it by pushing to the `release` branch, by pushing a
+# tag such as v0.1.0, or manually from the Actions tab.
 on:
   push:
+    branches: [release]
     tags: ["v*"]
   workflow_dispatch:
 
@@ -71,10 +73,20 @@ jobs:
           path: ${{ env.APK_NAME }}
 
       - name: Publish GitHub release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" "$APK_NAME" \
+          TAG="v$VERSION"
+          if [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_REF_NAME" != "$TAG" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME doesn't match versionName $VERSION"; exit 1
+          fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::Release $TAG already exists. Bump versionCode and versionName first."; exit 1
+          fi
+          CODE=$(grep -m1 'versionCode' app/build.gradle.kts | grep -oE '[0-9]+')
+          NOTES="fastlane/metadata/android/en-US/changelogs/$CODE.txt"
+          gh release create "$TAG" "$APK_NAME" \
+            --target "$GITHUB_SHA" \
             --title "Distillery $VERSION" \
-            --notes-file "fastlane/metadata/android/en-US/changelogs/$(grep -m1 'versionCode' app/build.gradle.kts | grep -oE '[0-9]+').txt"
+            --notes-file "$NOTES"

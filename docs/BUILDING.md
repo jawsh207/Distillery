@@ -70,8 +70,9 @@ signed with the same key, so losing it means users must uninstall to upgrade.
 
 ### GitHub Actions
 
-`.github/workflows/release.yml` builds and signs the APK and publishes a GitHub release when a
-`v*` tag is pushed (or run it by hand from the Actions tab). It needs four repository secrets
+`.github/workflows/release.yml` builds and signs the APK and publishes a GitHub release tagged
+`v<versionName>`. It runs when `main` is pushed to the `release` branch, when a `v*` tag is
+pushed, or by hand from the Actions tab. It needs four repository secrets
 (Settings › Secrets and variables › Actions):
 
 | Secret | Value |
@@ -85,8 +86,7 @@ To release: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add
 `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`, then
 
 ```sh
-git tag v0.1.0
-git push origin v0.1.0
+git push origin main:release
 ```
 
 ### Local builds
