@@ -61,3 +61,43 @@ because `MaterialExpressiveTheme`, `MotionScheme.expressive()`, the flexible top
 progress and loading indicators are internal in the 1.4 stable release. A few classic APIs used
 here (`ListItem(headlineContent = …)`, `Slider(value = …)`) are deprecated on the 1.6 line; the files
 that use them suppress the warning and can move to the new overloads when 1.6 is stable.
+
+## Release signing
+
+Release APKs are signed with the key in `distillery-release.jks` (alias `distillery`). The
+keystore is **not** in the repository. Keep a backup somewhere safe: Android only installs updates
+signed with the same key, so losing it means users must uninstall to upgrade.
+
+### GitHub Actions
+
+`.github/workflows/release.yml` builds and signs the APK and publishes a GitHub release when a
+`v*` tag is pushed (or run it by hand from the Actions tab). It needs four repository secrets
+(Settings › Secrets and variables › Actions):
+
+| Secret | Value |
+| --- | --- |
+| `RELEASE_KEYSTORE_BASE64` | `base64 -w0 distillery-release.jks` (macOS: `base64 -i distillery-release.jks`) |
+| `RELEASE_KEYSTORE_PASSWORD` | the keystore password |
+| `RELEASE_KEY_ALIAS` | `distillery` |
+| `RELEASE_KEY_PASSWORD` | the key password (same as the keystore password) |
+
+To release: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add
+`fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`, then
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+### Local builds
+
+Create `keystore.properties` in the project root (it's git-ignored):
+
+```properties
+storeFile=/path/to/distillery-release.jks
+storePassword=...
+keyAlias=distillery
+keyPassword=...
+```
+
+then run `./gradlew assembleRelease`. Without signing values the release build is left unsigned.

@@ -26,7 +26,7 @@ jobs:
       - name: Build and test
         run: |
           set -o pipefail
-          ./gradlew --no-daemon assembleDebug testDebugUnitTest 2>&1 | tee build.log
+          ./gradlew --no-daemon assembleDebug assembleRelease testDebugUnitTest 2>&1 | tee build.log
 
       - name: Report build errors
         if: failure()

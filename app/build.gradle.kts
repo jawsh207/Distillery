@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -26,8 +28,31 @@ android {
         }
     }
 
+    // Release signing. Values come from environment variables (CI secrets) or,
+    // for local builds, from keystore.properties at the project root (never
+    // committed). Without them the release build is left unsigned.
+    val keystoreProps = Properties().apply {
+        val f = rootProject.file("keystore.properties")
+        if (f.isFile) f.inputStream().use { load(it) }
+    }
+    fun signingValue(env: String, prop: String): String? =
+        System.getenv(env)?.takeIf { it.isNotBlank() } ?: keystoreProps.getProperty(prop)
+
+    val releaseStoreFile = signingValue("RELEASE_KEYSTORE_FILE", "storeFile")
+    signingConfigs {
+        if (releaseStoreFile != null) {
+            create("release") {
+                storeFile = rootProject.file(releaseStoreFile)
+                storePassword = signingValue("RELEASE_KEYSTORE_PASSWORD", "storePassword")
+                keyAlias = signingValue("RELEASE_KEY_ALIAS", "keyAlias")
+                keyPassword = signingValue("RELEASE_KEY_PASSWORD", "keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
