@@ -1,0 +1,20 @@
+Distillery is a speech-to-text engine for Android. It plugs into Android's standard speech recognition service, so any app that offers voice input can use it: keyboards and apps get live dictation with no popup and no app switch, and apps can hand it audio recordings to transcribe.
+
+<b>Private by design</b>
+Speech is recognized entirely on your phone with Moonshine, an open-source speech model built for live speech. Distillery never sends audio anywhere and needs no account. The only network use is the one-time download of a speech model you choose.
+
+<b>Features</b>
+<ul>
+<li>Works as the phone's default voice input (Android's RecognitionService)</li>
+<li>Live partial results while you speak, then the final text</li>
+<li>Stops on its own when you pause</li>
+<li>Transcribes recordings other apps hand over: AMR, M4A/3GP, MP3, Ogg, FLAC, WAV</li>
+<li>Choose Tiny, Small or Medium to trade speed for accuracy</li>
+<li>Material 3 Expressive design that follows your wallpaper colors</li>
+<li>Built-in test bench for dictation and recordings</li>
+</ul>
+
+<b>Open source</b>
+Distillery is licensed under the GPL-3.0. Moonshine and the English streaming models are MIT-licensed. Distillery never downloads models under non-open-source licenses.
+
+Requires Android 16. English only for now.

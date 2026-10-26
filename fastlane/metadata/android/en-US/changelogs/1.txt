@@ -1,0 +1,1 @@
+First release: on-device dictation and recording transcription with Moonshine English streaming models (Tiny, Small, Medium).

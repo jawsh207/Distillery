@@ -1,0 +1,42 @@
+# DRAFT fdroiddata recipe. Fill in the repository URLs and expect review
+# changes; see docs/BUILDING.md.
+Categories:
+  - System
+  - Writing
+License: GPL-3.0-or-later
+SourceCode: https://REPLACE-WITH-REPOSITORY
+IssueTracker: https://REPLACE-WITH-REPOSITORY/issues
+
+AutoName: Distillery
+
+RepoType: git
+Repo: https://REPLACE-WITH-REPOSITORY.git
+
+Builds:
+  - versionName: 0.1.0
+    versionCode: 1
+    commit: v0.1.0
+    subdir: app
+    submodules: true
+    sudo:
+      - apt-get update
+      - apt-get install -y cmake ninja-build python3
+    gradle:
+      - yes
+    rm:
+      - third_party/moonshine/core/third-party/onnxruntime/lib/android/arm64-v8a/libonnxruntime.so
+      - third_party/moonshine/core/third-party/onnxruntime/lib/android/armeabi-v7a/libonnxruntime.so
+      - third_party/moonshine/core/third-party/onnxruntime/lib/android/x86_64/libonnxruntime.so
+      - third_party/moonshine/core/third-party/onnxruntime/lib/ios
+    prebuild:
+      - cd ../third_party/moonshine
+      - ANDROID_SDK_ROOT=$$SDK$$ ANDROID_NDK_VERSION=28.2.13676358 MOONSHINE_ORT_ROOT=$PWD/../../build/ort
+        scripts/build-ort-android.sh force arm64-v8a x86_64
+    gradleprops:
+      - distillery.moonshineSource=third_party/moonshine
+    ndk: 28.2.13676358
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 0.1.0
+CurrentVersionCode: 1

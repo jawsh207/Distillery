@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Distillery</string>
+    <string name="recognition_service_label">Distillery (Moonshine, on-device)</string>
+
+    <string name="channel_downloads">Model downloads</string>
+    <string name="channel_downloads_description">Progress while a speech model downloads</string>
+    <string name="channel_attention">Needs attention</string>
+    <string name="channel_attention_description">Shown when voice input can\'t start, for example without microphone access</string>
+
+    <string name="notification_downloading">Downloading %1$s model</string>
+    <string name="notification_needs_mic">Distillery needs microphone access</string>
+    <string name="notification_needs_mic_body">An app asked for voice input. Open Distillery to allow the microphone.</string>
+    <string name="notification_needs_model">Distillery has no speech model yet</string>
+    <string name="notification_needs_model_body">Open Distillery to download one. Voice input works offline after that.</string>
+</resources>

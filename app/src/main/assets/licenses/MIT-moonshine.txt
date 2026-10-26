@@ -1,0 +1,55 @@
+Moonshine Voice library and speech models
+https://github.com/moonshine-ai/moonshine (v0.1.6)
+
+Licensing summary from Moonshine's LICENSE file:
+
+The code in this repo (https://github.com/moonshine-ai/moonshine), apart from 
+the source in core/third-party, is licensed under the MIT License. Moonshine 
+models are released under the MIT License by default, in every language and at 
+every size. This includes all streaming speech-to-text models and all 
+English-language models. See SECTION 1 for terms.
+
+The only speech-to-text models that are NOT MIT are the legacy non-streaming 
+models for languages other than English, which remain under the Moonshine 
+Community License, a non-commercial license. That list is exhaustive: 
+
+  Arabic      Base, Tiny 
+  Japanese    Base, Tiny 
+  Korean      Base, Tiny 
+  Mandarin    Base, Tiny 
+  Spanish     Base 
+  Ukrainian   Base, Tiny 
+  Vietnamese  Base, Tiny 
+
+Any speech-to-text model not named in that list is MIT, including every 
+streaming model and the English Tiny and Base models. See SECTION 2 for the 
+Community License terms.
+
+Separately, the text to speech and grapheme to phoneme models and data files 
+are not covered by the MIT default: they are licensed under the terms listed in 
+their own readmes and source repositories, since they derive from third-party 
+work. See core/moonshine-tts/data/README.md.
+
+Warp uses only the Moonshine Voice code and the English streaming speech-to-text models (Tiny, Small and Medium), which are under the MIT License below. Warp does not include, download or load any model covered by the Moonshine AI Community License, and does not use Moonshine's text-to-speech or grapheme-to-phoneme data.
+
+MIT License
+
+Copyright (c) 2025 Useful Sensors, Inc. (dba Moonshine AI)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
