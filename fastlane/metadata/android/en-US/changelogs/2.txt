@@ -1,0 +1,1 @@
+Fixes the release build crashing on launch (WorkManager startup). Adds a "Voice input failed" card that shows why a request failed, with a "Check model" button.

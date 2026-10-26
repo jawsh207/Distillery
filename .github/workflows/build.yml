@@ -28,6 +28,27 @@ jobs:
           set -o pipefail
           ./gradlew --no-daemon assembleDebug assembleRelease testDebugUnitTest 2>&1 | tee build.log
 
+      - name: Check release APK keeps reflection targets
+        run: |
+          # R8 must not strip classes and constructors that are created by
+          # reflection at startup; a missing one crashes the release build.
+          APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          DEXDUMP=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)dexdump
+          mkdir -p dex && unzip -q -o "$APK" 'classes*.dex' -d dex
+          for d in dex/*.dex; do "$DEXDUMP" "$d"; done > dex.txt
+          missing=""
+          for cls in androidx/work/impl/WorkDatabase_Impl app/distillery/stt/engine/ModelDownloadWorker; do
+            awk -v c="L$cls;" '
+              $0 ~ "Class descriptor" && index($0, c) {inside=1; next}
+              $0 ~ "Class descriptor" {inside=0}
+              inside && /name *: .<init>./ {found=1}
+              END {exit !found}' dex.txt || missing="$missing $cls"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error title=Release build broken::R8 removed constructors needed at runtime:$missing"; exit 1
+          fi
+          echo "Reflection targets kept."
+
       - name: Report build errors
         if: failure()
         run: |

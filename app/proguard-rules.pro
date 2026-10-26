@@ -11,3 +11,17 @@
 -dontwarn org.conscrypt.**
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
+
+# WorkManager stores its jobs in a Room database that it creates by reflection
+# (WorkDatabase_Impl's no-argument constructor). R8 full mode removes that
+# constructor unless it's kept, which crashes the app at startup.
+-keep class * extends androidx.room.RoomDatabase { <init>(); }
+-keep class androidx.work.impl.WorkDatabase_Impl { *; }
+
+# Workers are created by reflection from their class name.
+-keep class * extends androidx.work.ListenableWorker {
+    public <init>(android.content.Context, androidx.work.WorkerParameters);
+}
+
+# Startup initializers are created by reflection from the manifest.
+-keep class * implements androidx.startup.Initializer { <init>(); }
