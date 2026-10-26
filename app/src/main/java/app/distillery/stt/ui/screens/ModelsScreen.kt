@@ -181,14 +181,8 @@ private fun ModelCard(
     val context = LocalContext.current
     Card(
         shape = RoundedCornerShape(28.dp),
-        colors = if (isActive) {
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            )
-        } else {
-            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
-        },
+        // Same background for every model; the check mark shows which one is in use.
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -199,7 +193,11 @@ private fun ModelCard(
                     modifier = Modifier.weight(1f),
                 )
                 if (isActive) {
-                    Icon(painterResource(R.drawable.ic_check_circle), contentDescription = "In use")
+                    Icon(
+                        painterResource(R.drawable.ic_check_circle),
+                        contentDescription = "In use",
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
                 }
             }
             BodyText(model.summary)
