@@ -10,6 +10,7 @@ import android.os.SystemClock
 import android.speech.RecognitionService
 import android.speech.SpeechRecognizer
 import android.util.Log
+import app.distillery.stt.engine.Diagnostics
 import app.distillery.stt.engine.SpeechEngine
 import app.distillery.stt.engine.SttModel
 import kotlinx.coroutines.CancellationException
@@ -87,10 +88,12 @@ internal class RecognitionSession(
             withContext(Dispatchers.IO) { openInput() }
         } catch (e: SecurityException) {
             Log.w(TAG, "No permission to record", e)
+            Diagnostics.report("Not allowed to record", e)
             fail(SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS)
             return
         } catch (e: AudioInputException) {
             Log.w(TAG, "Audio source unavailable", e)
+            Diagnostics.report("Couldn't open the audio", e)
             fail(SpeechRecognizer.ERROR_AUDIO)
             return
         }
@@ -149,8 +152,13 @@ internal class RecognitionSession(
     private suspend fun recognize(audio: ReceiveChannel<AudioFrame>) {
         val transcriber: Transcriber = try {
             engine.acquire(model)
-        } catch (e: Exception) {
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            // Throwable, not Exception: a missing native library or running out
+            // of memory are Errors, and must fail the request, not the process.
             Log.e(TAG, "Couldn't load ${model.id}", e)
+            Diagnostics.report("Couldn't load the ${model.displayName} model", e)
             stopRequested.set(true)
             fail(SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE)
             return
@@ -246,7 +254,10 @@ internal class RecognitionSession(
             when {
                 request.segmented -> finish { callback.endOfSegmentedSession() }
                 text.isEmpty() -> fail(SpeechRecognizer.ERROR_NO_MATCH)
-                else -> finish { callback.results(resultsBundle(text)) }
+                else -> {
+                    Diagnostics.clear()
+                    finish { callback.results(resultsBundle(text)) }
+                }
             }
         } catch (e: AudioInputException) {
             fail(SpeechRecognizer.ERROR_AUDIO)
@@ -254,6 +265,7 @@ internal class RecognitionSession(
             throw e
         } catch (e: RuntimeException) {
             Log.e(TAG, "Recognition failed", e)
+            Diagnostics.report("Recognition failed", e)
             fail(SpeechRecognizer.ERROR_SERVER)
         } finally {
             transcriber.removeListener(listener)

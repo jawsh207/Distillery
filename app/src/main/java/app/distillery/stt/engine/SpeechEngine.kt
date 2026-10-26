@@ -96,6 +96,17 @@ class SpeechEngine(
         }
     }
 
+    /**
+     * Loads [model] now and reports how long it took, for the "Check model"
+     * button. Throws whatever the load throws.
+     */
+    suspend fun check(model: SttModel): Long = withContext(dispatcher) {
+        val started = System.nanoTime()
+        acquire(model)
+        releaseLater()
+        (System.nanoTime() - started) / 1_000_000
+    }
+
     /** Drops the loaded model, e.g. after it was deleted or replaced. */
     suspend fun unloadNow() = withContext(dispatcher) { unload() }
 

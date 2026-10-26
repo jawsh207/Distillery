@@ -16,6 +16,7 @@ import android.speech.SpeechRecognizer
 import android.util.Log
 import app.distillery.stt.Notifications
 import app.distillery.stt.DistilleryApplication
+import app.distillery.stt.engine.Diagnostics
 import app.distillery.stt.engine.ModelPolicyException
 import java.util.concurrent.ConcurrentHashMap
 
@@ -50,12 +51,17 @@ class DistilleryRecognitionService : RecognitionService() {
 
         if (!request.isEnglish) {
             Log.i(TAG, "Unsupported language ${request.language}")
+            Diagnostics.report("Language not supported", "Requested ${request.language}; Distillery supports English.")
             listener.safeError(SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED)
             return
         }
 
         val model = app.modelStore.resolveModel(app.settings.chosenModel)
         if (model == null) {
+            Diagnostics.report(
+                "No speech model downloaded",
+                "Chosen: ${app.settings.chosenModel.id}. Installed: none. Download one on the Models screen.",
+            )
             Notifications.showNeedsModel(this)
             listener.safeError(SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE)
             return
@@ -81,6 +87,7 @@ class DistilleryRecognitionService : RecognitionService() {
             // Recording needs both the caller's permission (checked by the
             // framework) and ours, since Distillery records on the caller's behalf.
             if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                Diagnostics.report("Microphone not allowed", "Distillery doesn't have microphone permission.")
                 Notifications.showNeedsMicrophone(this)
                 listener.safeError(SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS)
                 return

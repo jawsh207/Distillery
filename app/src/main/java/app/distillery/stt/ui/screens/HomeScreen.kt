@@ -41,6 +41,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -54,13 +55,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.distillery.stt.Notifications
 import app.distillery.stt.R
 import app.distillery.stt.DistilleryApplication
+import app.distillery.stt.engine.Diagnostics
 import app.distillery.stt.engine.DistillerySettings
+import app.distillery.stt.engine.Problem
 import app.distillery.stt.ui.VoiceInputSetup
 import app.distillery.stt.ui.components.BodyText
 import app.distillery.stt.ui.components.SectionCard
 import app.distillery.stt.ui.components.Tone
 import app.distillery.stt.ui.components.DistilleryScreen
 import java.util.Locale
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -86,11 +91,50 @@ fun HomeScreen(
         micGranted = it
     }
 
+    val problem by Diagnostics.lastProblem.collectAsStateWithLifecycle()
+    var modelCheck by remember { mutableStateOf<String?>(null) }
+    var checking by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
     val activeModel = remember(settingsVersion, installed) {
         app.modelStore.resolveModel(app.settings.chosenModel)
     }
 
     DistilleryScreen(title = "Distillery", subtitle = "On-device speech to text, powered by Moonshine") {
+        // -------------------------------------------------- last failure, if any
+        if (problem != null || modelCheck != null) {
+            item {
+                ProblemCard(
+                    problem = problem,
+                    check = modelCheck,
+                    checking = checking,
+                    canCheck = activeModel != null,
+                    onCheck = {
+                        val model = activeModel ?: return@ProblemCard
+                        checking = true
+                        scope.launch {
+                            modelCheck = try {
+                                val ms = app.engine.check(model)
+                                Diagnostics.clear()
+                                "${model.displayName} model loaded in $ms ms. Voice input should work now."
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Throwable) {
+                                Diagnostics.report("Couldn't load the ${model.displayName} model", e)
+                                null
+                            } finally {
+                                checking = false
+                            }
+                        }
+                    },
+                    onDismiss = {
+                        Diagnostics.clear()
+                        modelCheck = null
+                    },
+                )
+            }
+        }
+
         // ---------------------------------------------------------- microphone
         item {
             SectionCard(
@@ -294,3 +338,58 @@ private fun NavRow(title: String, subtitle: String, icon: Int, onClick: () -> Un
 
 private fun hasMic(context: Context) =
     context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+
+/** The reason the last voice input request failed, with a way to check the model. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun ProblemCard(
+    problem: Problem?,
+    check: String?,
+    checking: Boolean,
+    canCheck: Boolean,
+    onCheck: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val context = LocalContext.current
+    SectionCard(
+        title = if (problem != null) "Voice input failed" else "Model check",
+        icon = if (problem != null) R.drawable.ic_warning else R.drawable.ic_check_circle,
+        tone = if (problem != null) Tone.Action else Tone.Good,
+    ) {
+        if (problem != null) {
+            Text(problem.summary, style = MaterialTheme.typography.titleMedium)
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    problem.detail,
+                    fontFamily = FontFamily.Monospace,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(12.dp),
+                )
+            }
+        } else if (check != null) {
+            BodyText(check)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (problem != null && canCheck) {
+                Button(onClick = onCheck, enabled = !checking, shapes = ButtonDefaults.shapes()) {
+                    Text(if (checking) "Checking…" else "Check model")
+                }
+            }
+            if (problem != null) {
+                OutlinedButton(
+                    onClick = {
+                        context.getSystemService(ClipboardManager::class.java).setPrimaryClip(
+                            ClipData.newPlainText("Distillery error", "${problem.summary}\n${problem.detail}"),
+                        )
+                    },
+                    shapes = ButtonDefaults.shapes(),
+                ) { Text("Copy") }
+            }
+            TextButton(onClick = onDismiss) { Text("Dismiss") }
+        }
+    }
+}
