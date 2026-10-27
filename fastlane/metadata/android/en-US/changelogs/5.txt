@@ -1,0 +1,1 @@
+Simpler test screen: removed the "Use Distillery directly" switch. The test now always uses your default voice input, the same way keyboards and apps do.
