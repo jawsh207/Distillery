@@ -116,23 +116,10 @@ fun TestScreen(onBack: () -> Unit, onOpenModels: () -> Unit) {
                         supportingContent = {
                             Text(
                                 when {
-                                    tester.targetDistilleryDirectly -> "Distillery, by component name"
                                     distilleryIsDefault -> "System default: Distillery"
                                     defaultName != null -> "System default: $defaultName (not Distillery)"
                                     else -> "System default: unknown"
                                 },
-                            )
-                        },
-                        colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                    )
-                    ListItem(
-                        headlineContent = { Text("Use Distillery directly") },
-                        supportingContent = { Text("createSpeechRecognizer(context, component)") },
-                        trailingContent = {
-                            Switch(
-                                checked = tester.targetDistilleryDirectly,
-                                onCheckedChange = { tester.targetDistilleryDirectly = it },
-                                enabled = !tester.listening,
                             )
                         },
                         colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainer),

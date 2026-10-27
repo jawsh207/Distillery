@@ -16,7 +16,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import app.distillery.stt.ui.VoiceInputSetup
 
 /** One line in the test screen's event log. */
 data class TestEvent(val atMs: Long, val name: String, val detail: String = "")
@@ -44,16 +43,6 @@ class RecognizerTester(private val context: Context) {
 
     /** Request partial results (as keyboards do). */
     var partialResults by mutableStateOf(true)
-
-    private var targetDistilleryState by mutableStateOf(false)
-
-    /** Bind Distillery by component instead of using the system default. */
-    var targetDistilleryDirectly: Boolean
-        get() = targetDistilleryState
-        set(value) {
-            if (targetDistilleryState != value) destroyRecognizer()
-            targetDistilleryState = value
-        }
 
     val events = mutableStateListOf<TestEvent>()
 
@@ -122,7 +111,7 @@ class RecognizerTester(private val context: Context) {
         endOfSpeechAt = 0L
         log(
             "startListening",
-            (if (targetDistilleryDirectly) "Distillery (by component)" else "system default") + " · $source",
+            "system default · $source",
         )
         listening = true
         status = if (recordingDescriptor != null) "Transcribing recording…" else "Starting…"
@@ -172,11 +161,7 @@ class RecognizerTester(private val context: Context) {
     }
 
     private fun createRecognizer(): SpeechRecognizer {
-        val r = if (targetDistilleryDirectly) {
-            SpeechRecognizer.createSpeechRecognizer(context, VoiceInputSetup.component(context))
-        } else {
-            SpeechRecognizer.createSpeechRecognizer(context)
-        }
+        val r = SpeechRecognizer.createSpeechRecognizer(context)
         r.setRecognitionListener(listener)
         return r
     }
