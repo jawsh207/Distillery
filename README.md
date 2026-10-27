@@ -1,3 +1,5 @@
+<img src="fastlane/metadata/android/en-US/images/icon.png" alt="" width="96" align="right">
+
 # Distillery
 
 On-device speech-to-text for Android, powered by [Moonshine](https://github.com/moonshine-ai/moonshine).
