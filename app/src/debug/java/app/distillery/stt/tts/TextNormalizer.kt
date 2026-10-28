@@ -28,6 +28,7 @@ object TextNormalizer {
             .replace(' ', ' ')
             .replace('−', '-')
             .replace('–', '-') // en dash, used for ranges
+        t = lines(t)
         t = webAddresses(t)
         t = phoneNumbers(t)
         t = currency(t)
@@ -49,6 +50,25 @@ object TextNormalizer {
         t = acronyms(t)
         return t.replace(Regex("[ \\t]{2,}"), " ").trim()
     }
+
+    // ---------------------------------------------------- lines and lists
+
+    private val bullet = Regex("""^\s*(?:[-*+•▪‣◦]|\u2022)\s+""")
+    private val endsSentence = Regex("""[.!?:;,…]["')\]]*$""")
+
+    /**
+     * Treats each line as its own sentence: list bullets ("- item", "* item")
+     * are dropped, and a line that doesn't end in punctuation gets a period so
+     * list items and headings aren't run together.
+     */
+    private fun lines(t: String): String {
+        if ('\n' !in t && bullet.find(t) == null) return t
+        return t.split('\n').map { it.replace(bullet, "").trim() }.filter { it.isNotEmpty() }
+            .joinToString(" ") { if (endsSentence.containsMatchIn(it)) it else "$it." }
+    }
+
+    /** A spaced hyphen or double hyphen used as a dash: "yes - no", "wait -- what". */
+    private val spacedDash = Regex("""(?<=\S)\s+-{1,2}\s+(?=\S)|(?<=[A-Za-z])--(?=[A-Za-z])""")
 
     // ------------------------------------------------------------ helpers
 
@@ -205,6 +225,8 @@ object TextNormalizer {
         return if (y.length == 2) cardinal(n).let { if (n < 10) "oh $it" else it } else year(n)
     }
 
+    private val monthDayRange =
+        Regex("""\b($monthPattern)\.?\s+(\d{1,2})(?:st|nd|rd|th)?\s?-\s?(\d{1,2})(?:st|nd|rd|th)?\b(?:,?\s+(\d{4})\b)?""")
     private val monthDayYear = Regex("""\b($monthPattern)\.?\s+(\d{1,2})(?:st|nd|rd|th)?\b(?:,?\s+(\d{4})\b)?""")
     private val dayMonthYear = Regex("""\b(\d{1,2})(?:st|nd|rd|th)?\s+(?:of\s+)?($monthPattern)\b\.?(?:,?\s+(\d{4})\b)?""")
     private val monthYear = Regex("""\b($monthPattern)\.?\s+(\d{4})\b""")
@@ -216,6 +238,7 @@ object TextNormalizer {
         "Thu" to "Thursday", "Thur" to "Thursday", "Thurs" to "Thursday", "Fri" to "Friday",
         "Sat" to "Saturday", "Sun" to "Sunday",
     )
+    private val dateToDate = Regex("""(?<=(?:first|second|third|th))\s?-\s?(?=(?:the \w+ of )?(?:${months.joinToString("|")})\b)""")
     private val weekdayDot = Regex("""\b(Mon|Tues|Tue|Wed|Thurs|Thur|Thu|Fri|Sat|Sun)\.(?=,|\s+(?:$monthPattern|\d))""")
 
     private fun spokenDate(month: Int, day: Int, yearText: String?): String? {
@@ -236,6 +259,14 @@ object TextNormalizer {
             // US order (month/day) unless the first part can't be a month.
             (if (a <= 12) spokenDate(a, b, y) else spokenDate(b, a, y)) ?: m.value
         }
+        s = monthDayRange.replace(s) { m ->
+            val month = monthNumber(m.groupValues[1])
+            val from = m.groupValues[2].toInt()
+            val to = m.groupValues[3].toInt()
+            val y = m.groupValues[4]
+            if (from !in 1..31 || to !in 1..31) return@replace m.value
+            "${months[month - 1]} ${ordinal(from)} to ${ordinal(to)}" + if (y.isEmpty()) "" else ", ${yearWords(y)}"
+        }
         s = monthDayYear.replace(s) { m ->
             spokenDate(monthNumber(m.groupValues[1]), m.groupValues[2].toInt(), m.groupValues[3]) ?: m.value
         }
@@ -251,6 +282,7 @@ object TextNormalizer {
             months[monthNumber(m.groupValues[1]) - 1] + periodIfSentenceEnds(s, m.range.last + 1)
         }
         s = weekdayDot.replace(s) { m -> weekdayAbbr.getValue(m.groupValues[1]) }
+        s = dateToDate.replace(s, " to ")
         return s
     }
 
@@ -530,7 +562,7 @@ object TextNormalizer {
     )
 
     private fun symbols(t: String): String {
-        var s = t
+        var s = spacedDash.replace(t, ", ")
         for ((regex, spoken) in symbolRules) s = regex.replace(s, spoken)
         return s
     }

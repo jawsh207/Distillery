@@ -50,7 +50,7 @@ import app.distillery.stt.ui.components.DistilleryScreen
 private const val PREVIEW_TEXT = "Hello! This is how I sound when Distillery reads to you."
 
 @Composable
-fun VoicesScreen(onBack: () -> Unit) {
+fun VoicesScreen(onBack: () -> Unit, onOpenPronunciations: () -> Unit = {}) {
     val context = LocalContext.current
     val runtime = remember { TtsRuntime.get(context) }
     val installed by runtime.store.installed.collectAsStateWithLifecycle()
@@ -73,6 +73,11 @@ fun VoicesScreen(onBack: () -> Unit) {
     DistilleryScreen(title = "Voices", subtitle = "Text to speech · English · dev build", onBack = onBack) {
         item {
             DevNoticeCard()
+        }
+        item {
+            OutlinedButton(onClick = onOpenPronunciations, shapes = ButtonDefaults.shapes()) {
+                Text("Pronunciations")
+            }
         }
         item {
             BodyText(

@@ -19,7 +19,7 @@ object TtsFeature {
 
     fun handlesRoute(route: String): Boolean = false
 
-    fun NavGraphBuilder.destinations(onBack: () -> Unit) = Unit
+    fun NavGraphBuilder.destinations(onBack: () -> Unit, onNavigate: (String) -> Unit) = Unit
 
     fun LazyListScope.homeItems(onNavigate: (String) -> Unit) = Unit
 

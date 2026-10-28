@@ -60,6 +60,7 @@ import androidx.navigation.compose.composable
 import app.distillery.stt.R
 import app.distillery.stt.tts.TtsRuntime
 import app.distillery.stt.tts.ui.EngineSpeaker
+import app.distillery.stt.tts.ui.PronunciationsScreen
 import app.distillery.stt.tts.ui.VoicesScreen
 import app.distillery.stt.ui.components.BodyText
 import app.distillery.stt.ui.components.SectionCard
@@ -77,6 +78,7 @@ import java.util.Locale
 object TtsFeature {
     const val ENABLED = true
     const val VOICES_ROUTE = "voices"
+    const val PRONUNCIATIONS_ROUTE = "pronunciations"
 
     val licenseGroups: List<OssGroup> = listOf(
         OssGroup(
@@ -91,6 +93,10 @@ object TtsFeature {
                     "MIT", "MIT-onnxruntime.txt",
                 ),
                 OssComponent(
+                    "misaki", "misaki English lexicons", "hexgrad · Kokoro's own pronunciation dictionaries",
+                    "Apache-2.0", "Apache-2.0-misaki.txt",
+                ),
+                OssComponent(
                     "cmudict", "CMU Pronouncing Dictionary", "Carnegie Mellon University (via Moonshine's English dictionary)",
                     "BSD-2-Clause", "BSD-2-Clause-cmudict.txt",
                 ),
@@ -102,10 +108,13 @@ object TtsFeature {
         ),
     )
 
-    fun handlesRoute(route: String): Boolean = route == VOICES_ROUTE
+    fun handlesRoute(route: String): Boolean = route == VOICES_ROUTE || route == PRONUNCIATIONS_ROUTE
 
-    fun NavGraphBuilder.destinations(onBack: () -> Unit) {
-        composable(VOICES_ROUTE) { VoicesScreen(onBack = onBack) }
+    fun NavGraphBuilder.destinations(onBack: () -> Unit, onNavigate: (String) -> Unit) {
+        composable(VOICES_ROUTE) {
+            VoicesScreen(onBack = onBack, onOpenPronunciations = { onNavigate(PRONUNCIATIONS_ROUTE) })
+        }
+        composable(PRONUNCIATIONS_ROUTE) { PronunciationsScreen(onBack = onBack) }
     }
 
     fun LazyListScope.homeItems(onNavigate: (String) -> Unit) {
@@ -113,7 +122,12 @@ object TtsFeature {
     }
 
     fun LazyListScope.testItems(onNavigate: (String) -> Unit) {
-        item(key = "tts-test") { ListenCard(onOpenVoices = { onNavigate(VOICES_ROUTE) }) }
+        item(key = "tts-test") {
+            ListenCard(
+                onOpenVoices = { onNavigate(VOICES_ROUTE) },
+                onOpenPronunciations = { onNavigate(PRONUNCIATIONS_ROUTE) },
+            )
+        }
     }
 }
 
@@ -202,7 +216,7 @@ private fun openTtsSettings(context: Context) {
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun ListenCard(onOpenVoices: () -> Unit) {
+private fun ListenCard(onOpenVoices: () -> Unit, onOpenPronunciations: () -> Unit) {
     val context = LocalContext.current
     val runtime = remember { TtsRuntime.get(context) }
     val installed by runtime.store.installed.collectAsStateWithLifecycle()
@@ -274,6 +288,8 @@ private fun ListenCard(onOpenVoices: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             BodyText("Voice: ${(defaultVoice.takeIf { it in installed } ?: installed.first()).displayName}. The first sentence after a pause also loads the model.")
+
+            TextButton(onClick = onOpenPronunciations) { Text("Fix how a word is said") }
 
             // Kokoro in the app itself, without Android's TTS system.
             Text("Direct engine test", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))

@@ -48,7 +48,7 @@ fun DistilleryNavHost(openRoute: String? = null) {
                 onNavigate = { route -> nav.navigate(route) },
             )
         }
-        with(TtsFeature) { destinations(onBack = back) }
+        with(TtsFeature) { destinations(onBack = back, onNavigate = { route -> nav.navigate(route) }) }
         composable(Routes.LICENSES) {
             LicensesScreen(onBack = back, onOpen = { id -> nav.navigate(Routes.license(id)) })
         }

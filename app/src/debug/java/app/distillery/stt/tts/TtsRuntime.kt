@@ -9,7 +9,8 @@ class TtsRuntime private constructor(context: Context) {
     val store = VoiceStore(File(context.noBackupFilesDir, "tts"))
     val settings = TtsSettings(context)
     val downloads = VoiceDownloads(context)
-    val synth = KokoroSynth(context, store)
+    val pronunciations = PronunciationStore(context)
+    val synth = KokoroSynth(context, store) { pronunciations.all() }
 
     companion object {
         @Volatile private var instance: TtsRuntime? = null

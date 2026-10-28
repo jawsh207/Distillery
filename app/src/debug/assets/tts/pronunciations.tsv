@@ -1,0 +1,5 @@
+# Distillery's built-in pronunciation fixes, for words the lexicon gets wrong.
+# One per line: word<TAB>sounds like. Write "sounds like" in ordinary words;
+# the part in CAPITALS gets the stress. Possessives and plurals follow on
+# their own ("Bangor's"). Users can add their own under Voices › Pronunciations.
+Bangor	BANG gore

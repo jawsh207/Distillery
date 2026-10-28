@@ -93,6 +93,18 @@ class TextNormalizerTest {
         assertEquals("zero zero seven", NumberWords.number("007"))
     }
 
+    @Test fun listsDashesAndDateRanges() {
+        assertEquals(
+            "Shopping list: eggs. milk. bread.",
+            TextNormalizer.normalize("Shopping list:\n- eggs\n- milk\n* bread"),
+        )
+        assertEquals("Wait, what? Yes, no.", TextNormalizer.normalize("Wait -- what? Yes - no."))
+        assertEquals(
+            "open October twentieth to twenty sixth, twenty twenty six and October thirtieth to November second.",
+            TextNormalizer.normalize("open October 20-26, 2026 and Oct. 30 - Nov. 2."),
+        )
+    }
+
     @Test fun leavesPlainTextAlone() {
         val plain = "Nothing to change here, just words and a question?"
         assertEquals(plain, TextNormalizer.normalize(plain))
