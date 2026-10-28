@@ -89,7 +89,10 @@ class KokoroSynth(context: Context, private val store: VoiceStore) {
         val missing = store.missingFiles(voice)
         TtsLog.add(
             "Voice ${voice.id}: ${store.filesFor(voice).size} files in ${store.root}" +
-                if (missing.isEmpty()) "" else "; MISSING: ${missing.joinToString()}",
+                (if (missing.isEmpty()) "" else "; MISSING: ${missing.joinToString()}") +
+                store.filesFor(voice).joinToString("") { name ->
+                    "\n  $name ${java.io.File(store.root, name).length() / 1024} KB"
+                },
         )
         TtsLog.begin("Loading Kokoro with ${voice.id}")
         val started = SystemClock.elapsedRealtime()
@@ -97,10 +100,14 @@ class KokoroSynth(context: Context, private val store: VoiceStore) {
             .language(TtsLicensePolicy.LANGUAGE)
             .voice(voice.moonshineId)
             .modelsFrom(store.root)
+            // Dev builds: have the native library log its calls, so a failure
+            // shows up with its reason in the engine log below.
+            .options(listOf(TranscriberOption("log_api_calls", "true")))
         try {
             tts.load()
         } catch (e: Throwable) {
             TtsLog.error("Loading ${voice.id} failed", e)
+            TtsLog.add("Native log:\n" + TtsLog.nativeLog())
             TtsLog.end()
             runCatching { tts.close() }
             throw e

@@ -56,5 +56,25 @@ object TtsLog {
         _entries.value = emptyList()
     }
 
+    /**
+     * Recent lines this app's process wrote to logcat (apps may read their
+     * own), minus Distillery's own TTS lines: that's where the native
+     * library writes the reason a call failed.
+     */
+    fun nativeLog(maxLines: Int = 40): String = try {
+        val process = ProcessBuilder(
+            "logcat", "-d", "-v", "tag", "-t", "600", "--pid=${android.os.Process.myPid()}",
+        ).redirectErrorStream(true).start()
+        val lines = process.inputStream.bufferedReader().readLines()
+        process.waitFor()
+        val interesting = Regex("(?i)moonshine|tts|kokoro|g2p|onnx|ort|option|failed|error|exception|missing|not found")
+        lines.filter { TAG !in it && interesting.containsMatchIn(it) }
+            .takeLast(maxLines)
+            .joinToString("\n")
+            .ifEmpty { "(nothing relevant in logcat)" }
+    } catch (e: Exception) {
+        "(couldn't read logcat: ${e.message})"
+    }
+
     fun asText(): String = _entries.value.joinToString("\n") { it.text }
 }
