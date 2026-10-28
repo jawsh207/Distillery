@@ -234,10 +234,20 @@ private fun DefaultVoiceInputCard(isDefault: Boolean, context: Context) {
                 "Choose “Distillery (Moonshine, on-device)”.",
                 "Come back here; this card shows a check.",
             )
-            Button(onClick = { VoiceInputSetup.openVoiceInputSettings(context) }, shapes = ButtonDefaults.shapes()) {
+        }
+        // Greyed out once Distillery is the default, like the microphone button.
+        Button(
+            onClick = { VoiceInputSetup.openVoiceInputSettings(context) },
+            enabled = !isDefault,
+            shapes = ButtonDefaults.shapes(),
+        ) {
+            if (!isDefault) {
                 Icon(painterResource(R.drawable.ic_open_in_new), contentDescription = null, modifier = Modifier.size(18.dp))
-                Text("Open language settings", modifier = Modifier.padding(start = 8.dp))
             }
+            Text(
+                if (isDefault) "Distillery is the voice input" else "Open language settings",
+                modifier = if (isDefault) Modifier else Modifier.padding(start = 8.dp),
+            )
         }
         TextButton(onClick = { showHelp = !showHelp }) {
             Text(if (showHelp) "Hide details" else "Not listed, or the choice doesn't stick?")
