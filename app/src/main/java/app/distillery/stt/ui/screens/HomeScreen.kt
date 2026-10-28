@@ -229,13 +229,14 @@ private fun DefaultVoiceInputCard(isDefault: Boolean, context: Context) {
         } else {
             BodyText("Make Distillery the voice input so keyboards and apps use it:")
             Steps(
-                "Tap Open voice input settings.",
+                "Tap Open language settings.",
+                "Under Speech, tap Voice input.",
                 "Choose “Distillery (Moonshine, on-device)”.",
                 "Come back here; this card shows a check.",
             )
             Button(onClick = { VoiceInputSetup.openVoiceInputSettings(context) }, shapes = ButtonDefaults.shapes()) {
                 Icon(painterResource(R.drawable.ic_open_in_new), contentDescription = null, modifier = Modifier.size(18.dp))
-                Text("Open voice input settings", modifier = Modifier.padding(start = 8.dp))
+                Text("Open language settings", modifier = Modifier.padding(start = 8.dp))
             }
         }
         TextButton(onClick = { showHelp = !showHelp }) {
@@ -244,8 +245,8 @@ private fun DefaultVoiceInputCard(isDefault: Boolean, context: Context) {
         AnimatedVisibility(showHelp) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 BodyText(
-                    "On GrapheneOS it's under Settings › System › Language & region › Speech. On other phones look for " +
-                        "Voice input or Speech under Settings › System › Languages. " +
+                    "It's under Settings › System › Languages (Language & region on newer versions) › Speech › Voice input. " +
+                        "That's a different setting from the default digital assistant, which Distillery isn't. " +
                         "On some phones the digital assistant controls voice input and resets it; set Digital assistant app to None, " +
                         "or set it from a computer with ADB:",
                 )

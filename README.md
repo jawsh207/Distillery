@@ -122,8 +122,11 @@ Distillery also answers `checkRecognitionSupport` and `triggerModelDownload`.
 The app walks through this. Open the system speech settings and pick
 **Distillery (Moonshine, on-device)**:
 
-- GrapheneOS: Settings › System › Language & region › **Speech**
-- Other phones: usually Settings › System › Languages › **Voice input** or **Speech** (varies by phone)
+Settings › System › **Languages** (called **Language & region** on newer Android 16 releases and on
+GrapheneOS) › **Speech** › **Voice input**.
+
+This is not the *Default digital assistant* setting, which lists only full assistant apps. Android
+has no shortcut that opens Voice input directly, so the app's button opens the Languages page.
 
 If the phone's digital assistant keeps resetting it, set the assistant to None, or use ADB:
 
