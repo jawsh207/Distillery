@@ -1,0 +1,29 @@
+name: Generate TTS stand-in files
+
+# Run by hand when tools/make-g2p-standin.py changes. Commits the result.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Generate
+        run: |
+          pip install onnx==1.17.0 onnxruntime==1.23.2
+          python3 tools/make-g2p-standin.py
+      - name: Commit
+        run: |
+          git config user.name jawsh207
+          git config user.email jawsh@tuta.com
+          git add app/src/debug/assets/tts/standin
+          git diff --cached --quiet && { echo "No changes"; exit 0; }
+          git commit -m "Dev builds: regenerate the TTS stand-in files"
+          git push
