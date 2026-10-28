@@ -56,6 +56,7 @@ import app.distillery.stt.Notifications
 import app.distillery.stt.R
 import app.distillery.stt.DistilleryApplication
 import app.distillery.stt.engine.Diagnostics
+import app.distillery.stt.feature.TtsFeature
 import app.distillery.stt.engine.DistillerySettings
 import app.distillery.stt.engine.Problem
 import app.distillery.stt.ui.VoiceInputSetup
@@ -73,6 +74,7 @@ fun HomeScreen(
     onOpenModels: () -> Unit,
     onOpenTest: () -> Unit,
     onOpenLicenses: () -> Unit,
+    onNavigate: (String) -> Unit = {},
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as DistilleryApplication
@@ -186,6 +188,9 @@ fun HomeScreen(
         item {
             DefaultVoiceInputCard(isDefault = isDefault, context = context)
         }
+
+        // ------------------------------------- text to speech (dev builds only)
+        with(TtsFeature) { homeItems(onNavigate) }
 
         // ------------------------------------------------------------ dictation
         item {

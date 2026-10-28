@@ -49,6 +49,26 @@ jobs:
           fi
           echo "Reflection targets kept."
 
+      - name: Check text to speech stays out of releases
+        run: |
+          # Text to speech is dev-only until every file it downloads has a
+          # confirmed open-source license. The release APK must not contain
+          # the engine's classes, manifest entries or license notes.
+          APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          AAPT2=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)aapt2
+          found=""
+          grep -q 'Lapp/distillery/stt/tts/' dex.txt && found="$found classes"
+          "$AAPT2" dump xmltree --file AndroidManifest.xml "$APK" | grep -q 'TTS_SERVICE\|CHECK_TTS_DATA' && found="$found manifest"
+          unzip -l "$APK" | grep -q 'Moonshine-G2P-en-unconfirmed\|tts_engine' && found="$found files"
+          if [ -n "$found" ]; then
+            echo "::error title=Text to speech in release::The release APK contains text-to-speech parts:$found"; exit 1
+          fi
+          # And the dev build must have it, so the check above means something.
+          DEBUG_APK=$(ls app/build/outputs/apk/debug/*.apk | head -1)
+          "$AAPT2" dump xmltree --file AndroidManifest.xml "$DEBUG_APK" | grep -q 'TTS_SERVICE' \
+            || { echo "::error title=Dev build::The dev build has no text-to-speech engine"; exit 1; }
+          echo "Release has no text to speech; dev build has it."
+
       - name: Report build errors
         if: failure()
         run: |

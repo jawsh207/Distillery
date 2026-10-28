@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package app.distillery.stt.ui.screens
 
+import app.distillery.stt.feature.TtsFeature
+
 /** One component shown on the licenses screen; [asset] is under assets/licenses/. */
 data class OssComponent(
     val id: String,
@@ -17,7 +19,7 @@ data class OssGroup(val title: String, val components: List<OssComponent>)
  * gradle/libs.versions.toml and Moonshine's core/third-party folder.
  */
 object OssLicenses {
-    val groups = listOf(
+    private val core = listOf(
         OssGroup(
             "This app",
             listOf(
@@ -116,6 +118,9 @@ object OssLicenses {
             ),
         ),
     )
+
+    /** Dev builds add the text-to-speech components; release builds don't ship them. */
+    val groups: List<OssGroup> = core + TtsFeature.licenseGroups
 
     fun find(id: String): OssComponent? = groups.flatMap { it.components }.firstOrNull { it.id == id }
 }

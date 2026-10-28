@@ -184,6 +184,20 @@ explicit allowlist, and `ModelLicensePolicy` rejects any download manifest that 
 Models aren't bundled. The app downloads the one you pick (Wi-Fi only by default) into
 `noBackupFilesDir`, using Moonshine's resumable downloader. Network access exists only for this.
 
+## Text to speech (dev builds only)
+
+Dev (debug) builds also contain an English text-to-speech engine, built on
+Moonshine's synthesizer with the Kokoro-82M voices (Apache-2.0). Pick a voice
+under Voices, then choose Distillery as the preferred engine in
+Settings › Accessibility › Text-to-speech output (or System › Languages ›
+Text-to-speech output, depending on the phone).
+
+It isn't in releases yet. Kokoro needs Moonshine's English pronunciation data,
+and Moonshine hasn't stated that data's license; text to speech ships only if
+that turns out to be an open-source license. Voice cloning isn't offered: the
+cloning model was trained on non-commercial data. CI checks that release APKs
+contain none of it.
+
 ## Building
 
 See [docs/BUILDING.md](docs/BUILDING.md), including the from-source build for F-Droid.

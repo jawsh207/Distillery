@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Read by Settings' text-to-speech page; the gear opens Distillery. -->
+<tts-engine xmlns:android="http://schemas.android.com/apk/res/android"
+    android:settingsActivity="app.distillery.stt.ui.MainActivity" />

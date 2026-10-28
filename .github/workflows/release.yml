@@ -70,6 +70,11 @@ jobs:
             echo "::error::apksigner failed: $(echo "$OUT" | tr '\n' ' ')"; exit 1
           fi
           echo "$OUT"
+          # Text to speech is dev-only; never publish a release that has it.
+          AAPT2=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)aapt2
+          if "$AAPT2" dump xmltree --file AndroidManifest.xml "$APK" | grep -q 'TTS_SERVICE'; then
+            echo "::error title=Text to speech in release::The release APK declares a text-to-speech engine"; exit 1
+          fi
           VERSION=$(grep -m1 'versionName' app/build.gradle.kts | sed -E 's/.*"(.*)".*/\1/')
           cp "$APK" "Distillery-$VERSION.apk"
           echo "APK_NAME=Distillery-$VERSION.apk" >> "$GITHUB_ENV"

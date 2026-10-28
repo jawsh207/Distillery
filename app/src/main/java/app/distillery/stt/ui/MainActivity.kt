@@ -16,10 +16,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val openRoute = if (savedInstanceState == null) intent?.getStringExtra(EXTRA_OPEN) else null
         setContent {
             DistilleryTheme {
-                DistilleryNavHost()
+                DistilleryNavHost(openRoute = openRoute)
             }
         }
+    }
+
+    companion object {
+        /** Optional screen to open on launch, e.g. from another part of the app. */
+        const val EXTRA_OPEN = "app.distillery.stt.extra.OPEN"
     }
 }

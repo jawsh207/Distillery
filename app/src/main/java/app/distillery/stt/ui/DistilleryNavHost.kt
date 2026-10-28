@@ -2,11 +2,13 @@
 package app.distillery.stt.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import app.distillery.stt.feature.TtsFeature
 import app.distillery.stt.ui.screens.HomeScreen
 import app.distillery.stt.ui.screens.LicenseTextScreen
 import app.distillery.stt.ui.screens.LicensesScreen
@@ -23,19 +25,30 @@ private object Routes {
 }
 
 @Composable
-fun DistilleryNavHost() {
+fun DistilleryNavHost(openRoute: String? = null) {
     val nav = rememberNavController()
     val back: () -> Unit = { nav.popBackStack() }
+    LaunchedEffect(openRoute) {
+        if (openRoute != null && TtsFeature.handlesRoute(openRoute)) nav.navigate(openRoute)
+    }
     NavHost(navController = nav, startDestination = Routes.HOME) {
         composable(Routes.HOME) {
             HomeScreen(
                 onOpenModels = { nav.navigate(Routes.MODELS) },
                 onOpenTest = { nav.navigate(Routes.TEST) },
                 onOpenLicenses = { nav.navigate(Routes.LICENSES) },
+                onNavigate = { route -> nav.navigate(route) },
             )
         }
         composable(Routes.MODELS) { ModelsScreen(onBack = back) }
-        composable(Routes.TEST) { TestScreen(onBack = back, onOpenModels = { nav.navigate(Routes.MODELS) }) }
+        composable(Routes.TEST) {
+            TestScreen(
+                onBack = back,
+                onOpenModels = { nav.navigate(Routes.MODELS) },
+                onNavigate = { route -> nav.navigate(route) },
+            )
+        }
+        with(TtsFeature) { destinations(onBack = back) }
         composable(Routes.LICENSES) {
             LicensesScreen(onBack = back, onOpen = { id -> nav.navigate(Routes.license(id)) })
         }
