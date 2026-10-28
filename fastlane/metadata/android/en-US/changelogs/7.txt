@@ -1,0 +1,1 @@
+Once Distillery is your voice input, the setup button now stays visible but greyed out ("Distillery is the voice input"), matching the microphone button.
