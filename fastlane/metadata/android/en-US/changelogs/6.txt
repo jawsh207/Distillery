@@ -1,0 +1,1 @@
+Setup fix: "Open language settings" now opens the Languages page (Language & region on newer versions), where Distillery is chosen under Speech › Voice input. It previously opened the default digital assistant picker, where Distillery isn't listed.
