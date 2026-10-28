@@ -6,6 +6,18 @@
 package app.distillery.stt.feature
 
 import android.content.ActivityNotFoundException
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.os.SystemClock
+import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.text.font.FontFamily
+import app.distillery.stt.tts.TtsLog
+import app.distillery.stt.tts.ui.DirectPlayer
+import kotlinx.coroutines.delay
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
@@ -193,7 +205,14 @@ private fun ListenCard(onOpenVoices: () -> Unit) {
     val defaultVoice by runtime.settings.defaultVoice.collectAsStateWithLifecycle()
     val speaker = remember { EngineSpeaker(context) }
     DisposableEffect(speaker) { onDispose { speaker.shutdown() } }
-    LifecycleResumeEffect(Unit) { onPauseOrDispose { speaker.stop() } }
+    val scope = rememberCoroutineScope()
+    val direct = remember { DirectPlayer(runtime.synth, scope) }
+    LifecycleResumeEffect(Unit) {
+        onPauseOrDispose {
+            speaker.stop()
+            direct.stop()
+        }
+    }
 
     var text by rememberSaveable {
         mutableStateOf("Distillery turns text into speech right on your phone. No internet needed, and nothing leaves the device.")
@@ -251,7 +270,77 @@ private fun ListenCard(onOpenVoices: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             BodyText("Voice: ${(defaultVoice.takeIf { it in installed } ?: installed.first()).displayName}. The first sentence after a pause also loads the model.")
+
+            // Kokoro in the app itself, without Android's TTS system.
+            Text("Direct engine test", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
+            BodyText("Runs Kokoro inside the app and plays the audio, skipping Android's text-to-speech system.")
+            FilledTonalButton(
+                onClick = {
+                    val voice = defaultVoice.takeIf { it in installed } ?: installed.first()
+                    direct.play(voice, text, rate)
+                },
+                enabled = !direct.busy && text.isNotBlank(),
+                shapes = ButtonDefaults.shapes(),
+            ) { Text(if (direct.busy) "Working…" else "Test engine directly") }
+            direct.status?.let {
+                Text(it, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+
+            EngineLog()
         }
+    }
+}
+
+/** The engine's recent steps, the one in progress with a running timer, and Copy. */
+@Composable
+private fun EngineLog() {
+    val context = LocalContext.current
+    val entries by TtsLog.entries.collectAsStateWithLifecycle()
+    val phase by TtsLog.phase.collectAsStateWithLifecycle()
+    var now by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
+    LaunchedEffect(phase) {
+        while (phase != null) {
+            now = SystemClock.elapsedRealtime()
+            delay(250)
+        }
+    }
+
+    Text("Engine log", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
+    phase?.let { p ->
+        Text(
+            "Now: ${p.text} · ${seconds((now - p.sinceMs).coerceAtLeast(0))}",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+    }
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        val start = entries.firstOrNull()?.atMs ?: 0L
+        Text(
+            if (entries.isEmpty()) "Nothing yet." else entries.takeLast(25).joinToString("\n") {
+                "+${seconds(it.atMs - start)}  ${it.text}"
+            },
+            fontFamily = FontFamily.Monospace,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(12.dp),
+        )
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedButton(
+            onClick = {
+                context.getSystemService(ClipboardManager::class.java)
+                    .setPrimaryClip(ClipData.newPlainText("Distillery TTS log", TtsLog.asText()))
+            },
+            enabled = entries.isNotEmpty(),
+            shapes = ButtonDefaults.shapes(),
+        ) {
+            Icon(painterResource(R.drawable.ic_copy), contentDescription = null, modifier = Modifier.size(18.dp))
+            Text("Copy log", modifier = Modifier.padding(start = 8.dp))
+        }
+        TextButton(onClick = TtsLog::clear, enabled = entries.isNotEmpty()) { Text("Clear") }
     }
 }
 

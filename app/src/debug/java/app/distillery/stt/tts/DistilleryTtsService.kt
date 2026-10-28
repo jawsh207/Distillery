@@ -26,7 +26,13 @@ class DistilleryTtsService : TextToSpeechService() {
     @Volatile private var stopRequested = false
     @Volatile private var currentAccent: Accent? = null
 
+    override fun onCreate() {
+        super.onCreate()
+        TtsLog.add("Engine service started")
+    }
+
     override fun onDestroy() {
+        TtsLog.add("Engine service stopped")
         runtime.synth.unloadNow()
         super.onDestroy()
     }
@@ -95,18 +101,25 @@ class DistilleryTtsService : TextToSpeechService() {
     // -------------------------------------------------------------- speaking
 
     override fun onStop() {
+        TtsLog.add("Stop requested")
         stopRequested = true
     }
 
     override fun onSynthesizeText(request: SynthesisRequest, callback: SynthesisCallback) {
         stopRequested = false
+        TtsLog.add(
+            "Request: ${request.charSequenceText?.length ?: 0} chars, language=${request.language}-${request.country}, " +
+                "voice=${request.voiceName?.ifEmpty { null } ?: "(none)"}, rate=${request.speechRate}, caller uid ${request.callerUid}",
+        )
         if (!isEnglish(request.language)) {
+            TtsLog.add("Refused: not English")
             callback.error(TextToSpeech.ERROR_INVALID_REQUEST)
             return
         }
         val voice = KokoroVoice.fromVoiceName(request.voiceName)?.takeIf { runtime.store.isInstalled(it) }
             ?: defaultVoice(Accent.fromCountry(request.country))
         if (voice == null) {
+            TtsLog.add("Refused: no voice downloaded")
             callback.error(TextToSpeech.ERROR_NOT_INSTALLED_YET)
             return
         }
@@ -120,20 +133,24 @@ class DistilleryTtsService : TextToSpeechService() {
             return
         }
 
+        TtsLog.add("Speaking with ${voice.id} at ${speed}x, ${sentences.size} sentence(s)")
         var started = false
         try {
-            for (sentence in sentences) {
-                if (stopRequested) return
+            for ((index, sentence) in sentences.withIndex()) {
+                if (stopRequested) return TtsLog.add("Stopped before sentence ${index + 1}")
                 val (samples, rate) = runtime.synth.synthesize(voice, sentence, speed)
-                if (stopRequested) return
+                if (stopRequested) return TtsLog.add("Stopped after sentence ${index + 1}")
                 if (!started) {
-                    if (callback.start(rate, AudioFormat.ENCODING_PCM_16BIT, 1) != TextToSpeech.SUCCESS) return
+                    val result = callback.start(rate, AudioFormat.ENCODING_PCM_16BIT, 1)
+                    if (result != TextToSpeech.SUCCESS) return TtsLog.add("Playback refused to start ($result)")
                     started = true
                 }
-                if (!deliver(samples, callback)) return
+                if (!deliver(samples, callback)) return TtsLog.add("Playback stopped taking audio")
             }
             callback.done()
+            TtsLog.add("Done")
         } catch (e: VoiceNotInstalledException) {
+            TtsLog.add("Refused: ${e.message}")
             callback.error(TextToSpeech.ERROR_NOT_INSTALLED_YET)
         } catch (e: Throwable) {
             Log.e(TAG, "Synthesis failed", e)

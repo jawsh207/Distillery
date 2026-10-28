@@ -91,7 +91,7 @@ class EngineSpeaker(context: Context) {
         gotAudio = false
         startedAt = SystemClock.elapsedRealtime()
         speaking = true
-        status = "Loading the voice…"
+        status = "Waiting for the engine…"
         val result = tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "distillery-test")
         if (result != TextToSpeech.SUCCESS) {
             speaking = false

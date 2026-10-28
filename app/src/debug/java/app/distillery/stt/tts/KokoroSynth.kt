@@ -54,12 +54,24 @@ class KokoroSynth(context: Context, private val store: VoiceStore) {
         unload?.cancel(false)
         try {
             val tts = ensureLoaded(voice)
+            TtsLog.begin("Synthesizing ${text.length} characters")
+            val started = SystemClock.elapsedRealtime()
             val result = tts.synthesize(
                 text,
                 listOf(TranscriberOption("speed", String.format(Locale.US, "%.2f", speed))),
             )
-            (result.samples ?: FloatArray(0)) to result.sampleRateHz
+            val samples = result.samples ?: FloatArray(0)
+            val audioMs = if (result.sampleRateHz > 0) samples.size * 1000L / result.sampleRateHz else 0L
+            TtsLog.add(
+                "Made $audioMs ms of audio (${samples.size} samples at ${result.sampleRateHz} Hz) " +
+                    "in ${SystemClock.elapsedRealtime() - started} ms",
+            )
+            samples to result.sampleRateHz
+        } catch (e: Throwable) {
+            TtsLog.error("Synthesis failed", e)
+            throw e
         } finally {
+            TtsLog.end()
             scheduleUnload()
         }
     }
@@ -74,6 +86,12 @@ class KokoroSynth(context: Context, private val store: VoiceStore) {
         if (!store.isInstalled(voice)) throw VoiceNotInstalledException(voice)
         engine?.let { if (engineVoice == voice) return it }
         release()
+        val missing = store.missingFiles(voice)
+        TtsLog.add(
+            "Voice ${voice.id}: ${store.filesFor(voice).size} files in ${store.root}" +
+                if (missing.isEmpty()) "" else "; MISSING: ${missing.joinToString()}",
+        )
+        TtsLog.begin("Loading Kokoro with ${voice.id}")
         val started = SystemClock.elapsedRealtime()
         val tts = TextToSpeech(appContext)
             .language(TtsLicensePolicy.LANGUAGE)
@@ -82,11 +100,14 @@ class KokoroSynth(context: Context, private val store: VoiceStore) {
         try {
             tts.load()
         } catch (e: Throwable) {
+            TtsLog.error("Loading ${voice.id} failed", e)
+            TtsLog.end()
             runCatching { tts.close() }
             throw e
         }
         lastLoadMs = SystemClock.elapsedRealtime() - started
-        Log.i(TAG, "Loaded ${voice.id} in $lastLoadMs ms")
+        TtsLog.add("Loaded ${voice.id} in $lastLoadMs ms")
+        TtsLog.end()
         engine = tts
         engineVoice = voice
         return tts
@@ -98,7 +119,10 @@ class KokoroSynth(context: Context, private val store: VoiceStore) {
     }
 
     private fun release() {
-        engine?.let { runCatching { it.close() } }
+        engine?.let {
+            TtsLog.add("Unloading ${engineVoice?.id}")
+            runCatching { it.close() }
+        }
         engine = null
         engineVoice = null
     }

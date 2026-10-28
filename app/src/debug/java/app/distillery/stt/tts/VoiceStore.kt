@@ -50,6 +50,13 @@ class VoiceStore(val root: File) {
         _installed.value = scan()
     }
 
+    /** The files [voice]'s download recorded. */
+    fun filesFor(voice: KokoroVoice): List<String> = filesOf(voice)
+
+    /** Recorded files that are no longer on disk (or are empty). */
+    fun missingFiles(voice: KokoroVoice): List<String> =
+        filesOf(voice).filter { File(root, it).let { f -> !f.isFile || f.length() == 0L } }
+
     private fun filesOf(voice: KokoroVoice): List<String> =
         marker(voice).takeIf { it.isFile }?.readLines()?.filter { it.isNotBlank() }.orEmpty()
 
