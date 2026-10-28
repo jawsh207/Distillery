@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import app.distillery.stt.tts.KokoroSynth
 import app.distillery.stt.tts.KokoroVoice
+import app.distillery.stt.tts.TextNormalizer
 import app.distillery.stt.tts.TtsLog
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -40,7 +41,9 @@ class DirectPlayer(private val synth: KokoroSynth, private val scope: CoroutineS
             try {
                 TtsLog.add("Direct test: ${voice.id}, ${text.length} chars")
                 val started = SystemClock.elapsedRealtime()
-                val (samples, rate) = synth.synthesize(voice, text, speed)
+                val spoken = TextNormalizer.normalize(text)
+                if (spoken != text) TtsLog.add("Read as: ${spoken.take(400)}")
+                val (samples, rate) = synth.synthesize(voice, spoken, speed)
                 val madeMs = SystemClock.elapsedRealtime() - started
                 if (samples.isEmpty() || rate <= 0) {
                     status = "Kokoro returned no audio (rate $rate)"

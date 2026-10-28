@@ -126,7 +126,9 @@ class DistilleryTtsService : TextToSpeechService() {
 
         val text = request.charSequenceText?.toString().orEmpty()
         val speed = (request.speechRate / 100f).coerceIn(MIN_SPEED, MAX_SPEED)
-        val sentences = KokoroSynth.sentences(text)
+        val spoken = TextNormalizer.normalize(text)
+        if (spoken != text) TtsLog.add("Read as: ${spoken.take(400)}")
+        val sentences = KokoroSynth.sentences(spoken)
         if (sentences.isEmpty()) {
             callback.start(DEFAULT_SAMPLE_RATE, AudioFormat.ENCODING_PCM_16BIT, 1)
             callback.done()
