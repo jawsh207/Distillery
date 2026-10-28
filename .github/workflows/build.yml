@@ -67,7 +67,16 @@ jobs:
           DEBUG_APK=$(ls app/build/outputs/apk/debug/*.apk | head -1)
           "$AAPT2" dump xmltree --file AndroidManifest.xml "$DEBUG_APK" | grep -q 'TTS_SERVICE' \
             || { echo "::error title=Dev build::The dev build has no text-to-speech engine"; exit 1; }
-          echo "Release has no text to speech; dev build has it."
+          # The dev build must carry the stock ONNX Runtime (the TTS models
+          # need operators Moonshine's cut-down build lacks); the release keeps
+          # Moonshine's own. Packaging may strip the libraries, so compare the
+          # two APKs with each other rather than with the downloaded file.
+          dev_ort=$(unzip -p "$DEBUG_APK" lib/arm64-v8a/libonnxruntime.so | wc -c)
+          rel_ort=$(unzip -p "$APK" lib/arm64-v8a/libonnxruntime.so | wc -c)
+          echo "ONNX Runtime: dev $dev_ort bytes, release $rel_ort bytes"
+          [ "$dev_ort" -gt $((rel_ort + 2000000)) ] \
+            || { echo "::error title=Dev build::The dev APK doesn't carry the full ONNX Runtime (dev $dev_ort, release $rel_ort bytes)"; exit 1; }
+          echo "Release has no text to speech; dev build has it, with the full ONNX Runtime."
 
       - name: Report build errors
         if: failure()

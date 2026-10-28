@@ -19,11 +19,16 @@ lifecycle = "2.9.0"
 navigationCompose = "2.9.0"
 work = "2.10.1"
 
+# Stock ONNX Runtime (MIT), dev builds only: see app/build.gradle.kts.
+# Must stay on the version Moonshine's native library is built against.
+onnxruntime = "1.23.2"
+
 junit = "4.13.2"
 orgJson = "20240303"
 
 [libraries]
 moonshine-voice = { group = "ai.moonshine", name = "moonshine-voice", version.ref = "moonshineVoice" }
+onnxruntime-android = { group = "com.microsoft.onnxruntime", name = "onnxruntime-android", version.ref = "onnxruntime" }
 
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }

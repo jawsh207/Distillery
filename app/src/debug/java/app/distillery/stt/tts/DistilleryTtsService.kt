@@ -113,14 +113,14 @@ class DistilleryTtsService : TextToSpeechService() {
         )
         if (!isEnglish(request.language)) {
             TtsLog.add("Refused: not English")
-            callback.error(TextToSpeech.ERROR_INVALID_REQUEST)
+            fail(callback, TextToSpeech.ERROR_INVALID_REQUEST, started = false)
             return
         }
         val voice = KokoroVoice.fromVoiceName(request.voiceName)?.takeIf { runtime.store.isInstalled(it) }
             ?: defaultVoice(Accent.fromCountry(request.country))
         if (voice == null) {
             TtsLog.add("Refused: no voice downloaded")
-            callback.error(TextToSpeech.ERROR_NOT_INSTALLED_YET)
+            fail(callback, TextToSpeech.ERROR_NOT_INSTALLED_YET, started = false)
             return
         }
 
@@ -151,11 +151,21 @@ class DistilleryTtsService : TextToSpeechService() {
             TtsLog.add("Done")
         } catch (e: VoiceNotInstalledException) {
             TtsLog.add("Refused: ${e.message}")
-            callback.error(TextToSpeech.ERROR_NOT_INSTALLED_YET)
+            fail(callback, TextToSpeech.ERROR_NOT_INSTALLED_YET, started)
         } catch (e: Throwable) {
             Log.e(TAG, "Synthesis failed", e)
-            callback.error(TextToSpeech.ERROR_SYNTHESIS)
+            fail(callback, TextToSpeech.ERROR_SYNTHESIS, started)
         }
+    }
+
+    /**
+     * Reports a failure so the caller's onError actually fires. Android only
+     * passes an error on to the app once synthesis has started, so start a
+     * (silent) stream first if nothing was started yet.
+     */
+    private fun fail(callback: SynthesisCallback, code: Int, started: Boolean) {
+        if (!started) callback.start(DEFAULT_SAMPLE_RATE, AudioFormat.ENCODING_PCM_16BIT, 1)
+        callback.error(code)
     }
 
     /** Writes float samples as 16-bit PCM in buffers the framework accepts. */

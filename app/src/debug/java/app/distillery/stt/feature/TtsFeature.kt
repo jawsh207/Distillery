@@ -87,6 +87,10 @@ object TtsFeature {
                     "Apache-2.0", "Apache-2.0.txt",
                 ),
                 OssComponent(
+                    "onnxruntime-full", "ONNX Runtime 1.23.2 (full build)", "Microsoft Corporation · replaces the minimal build in dev builds",
+                    "MIT", "MIT-onnxruntime.txt",
+                ),
+                OssComponent(
                     "cmudict", "CMU Pronouncing Dictionary", "Carnegie Mellon University (via Moonshine's English dictionary)",
                     "BSD-2-Clause", "BSD-2-Clause-cmudict.txt",
                 ),

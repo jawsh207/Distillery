@@ -1,4 +1,5 @@
 import java.util.Properties
+import javax.inject.Inject
 
 plugins {
     alias(libs.plugins.android.application)
@@ -86,7 +87,54 @@ android {
     }
 }
 
+// Dev builds: the full ONNX Runtime.
+//
+// Moonshine's AAR ships an ONNX Runtime cut down to the operators of its own
+// models, and the 0.1.5 build lacks kernels the text-to-speech models now on
+// its CDN need (QLinearMatMul). Dev builds, which carry text to speech, replace
+// it with the stock ONNX Runtime Android library of the same version, which has
+// every operator. Release builds keep Moonshine's own library unchanged.
+val stockOrt: Configuration by configurations.creating {
+    isTransitive = false
+    isCanBeConsumed = false
+}
+
+abstract class ExtractStockOrt : DefaultTask() {
+    @get:InputFiles abstract val aar: ConfigurableFileCollection
+    @get:OutputDirectory abstract val outputDir: DirectoryProperty
+    @get:Inject abstract val fs: FileSystemOperations
+    @get:Inject abstract val archives: ArchiveOperations
+
+    @TaskAction
+    fun extract() {
+        val aarFile = aar.singleFile
+        fs.sync {
+            from(archives.zipTree(aarFile)) {
+                include("jni/arm64-v8a/libonnxruntime.so", "jni/x86_64/libonnxruntime.so")
+                eachFile { relativePath = RelativePath(true, *relativePath.segments.drop(1).toTypedArray()) }
+                includeEmptyDirs = false
+            }
+            into(outputDir)
+        }
+    }
+}
+
+val extractStockOrt = tasks.register<ExtractStockOrt>("extractStockOrt") {
+    aar.from(stockOrt)
+    outputDir.set(layout.buildDirectory.dir("generated/stockOrtJni"))
+}
+
+androidComponents {
+    onVariants(selector().withBuildType("debug")) { variant ->
+        variant.sources.jniLibs?.addGeneratedSourceDirectory(extractStockOrt, ExtractStockOrt::outputDir)
+        // The app's own copy is picked over the one inside Moonshine's AAR;
+        // CI checks the dev APK really carries the stock library.
+        variant.packaging.jniLibs.pickFirsts.add("**/libonnxruntime.so")
+    }
+}
+
 dependencies {
+    stockOrt(libs.onnxruntime.android)
     implementation(libs.moonshine.voice)
 
     implementation(libs.androidx.core.ktx)
