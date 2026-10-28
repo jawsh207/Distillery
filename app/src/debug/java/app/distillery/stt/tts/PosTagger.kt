@@ -9,7 +9,7 @@ import java.util.zip.GZIPInputStream
  * tags (NN, VB, VBD, JJ, …), used to pick between a heteronym's readings
  * ("I read" now vs. "I read" yesterday, "a record" vs. "to record").
  *
- * The model (assets/tts/pos-tagger.tsv.gz) is trained by
+ * The model (assets/tts/pos-tagger.tsv.gzip) is trained by
  * tools/train-pos-tagger.py on the Universal Dependencies English Web Treebank
  * and is CC BY-SA 4.0. [features] must match `features()` in that script
  * exactly, or the weights mean nothing.

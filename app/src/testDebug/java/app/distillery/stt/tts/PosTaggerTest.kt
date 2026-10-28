@@ -10,10 +10,10 @@ import java.io.File
 class PosTaggerTest {
 
     private val assets = File("src/debug/assets/tts")
-    private val tagger by lazy { File(assets, "pos-tagger.tsv.gz").inputStream().use { PosTagger.load(it) } }
+    private val tagger by lazy { File(assets, "pos-tagger.tsv.gzip").inputStream().use { PosTagger.load(it) } }
     private val pronouncer by lazy {
-        val heteronyms = File(assets, "heteronyms-us.tsv.gz").inputStream().use { Lexicon.loadHeteronyms(it) }
-        val lexicon = File(assets, "lexicon-us.tsv.gz").inputStream().use { Lexicon.load(it, false, heteronyms) }
+        val heteronyms = File(assets, "heteronyms-us.tsv.gzip").inputStream().use { Lexicon.loadHeteronyms(it) }
+        val lexicon = File(assets, "lexicon-us.tsv.gzip").inputStream().use { Lexicon.load(it, false, heteronyms) }
         Pronouncer(lexicon, emptyMap(), tagger) { "<$it>" }
     }
 

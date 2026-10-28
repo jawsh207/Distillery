@@ -7,7 +7,7 @@ trained with; its gold and silver dictionaries are written in Kokoro's own
 phoneme set. This flattens them to word<TAB>phonemes, gold over silver, taking
 each word's DEFAULT reading where misaki has several by part of speech, and
 gzips them into app/src/debug/assets/tts/. Words with several readings
-("read", "lead", "record") also go to heteronyms-<accent>.tsv.gz as
+("read", "lead", "record") also go to heteronyms-<accent>.tsv.gzip as
 word<TAB>TAG=phonemes;TAG=phonemes, for the part-of-speech tagger to choose from.
 
     python3 tools/build-tts-lexicon.py /path/to/misaki
@@ -42,7 +42,7 @@ for accent in ("us", "gb"):
             if isinstance(value, str) and value and "\t" not in word and "\n" not in word:
                 merged[word] = value
     lines = "".join(f"{w}\t{p}\n" for w, p in sorted(merged.items()))
-    target = out_dir / f"lexicon-{accent}.tsv.gz"
+    target = out_dir / f"lexicon-{accent}.tsv.gzip"
     # mtime=0 keeps the file byte-for-byte reproducible.
     with open(target, "wb") as raw, gzip.GzipFile(fileobj=raw, mode="wb", mtime=0, filename="") as gz:
         gz.write(lines.encode("utf-8"))
@@ -50,7 +50,7 @@ for accent in ("us", "gb"):
     lines = "".join(
         f"{w}\t" + ";".join(f"{t}={p}" for t, p in sorted(r.items())) + "\n" for w, r in sorted(heteronyms.items())
     )
-    target = out_dir / f"heteronyms-{accent}.tsv.gz"
+    target = out_dir / f"heteronyms-{accent}.tsv.gzip"
     with open(target, "wb") as raw, gzip.GzipFile(fileobj=raw, mode="wb", mtime=0, filename="") as gz:
         gz.write(lines.encode("utf-8"))
     print(f"{target.name}: {len(heteronyms)} words")
