@@ -1,0 +1,20 @@
+{
+  "config_schema_version": 1,
+  "model_kind": "oov",
+  "char_vocab": {
+    "<pad>": 0,
+    "<unk>": 1
+  },
+  "phoneme_vocab": {
+    "<pad>": 0,
+    "<bos>": 1,
+    "<eos>": 2
+  },
+  "train_config": {
+    "max_seq_len": 1
+  },
+  "oov_index": {
+    "max_phoneme_len": 1
+  },
+  "note": "Distillery stand-in. Never run: Distillery pronounces words itself."
+}
