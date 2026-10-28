@@ -97,6 +97,10 @@ object TtsFeature {
                     "Apache-2.0", "Apache-2.0-misaki.txt",
                 ),
                 OssComponent(
+                    "ud-english-ewt", "Part-of-speech tagger", "Distillery's own, trained on the Universal Dependencies English Web Treebank (Stanford University)",
+                    "CC-BY-SA-4.0", "CC-BY-SA-4.0-ud-english-ewt.txt",
+                ),
+                OssComponent(
                     "cmudict", "CMU Pronouncing Dictionary", "Carnegie Mellon University (via Moonshine's English dictionary)",
                     "BSD-2-Clause", "BSD-2-Clause-cmudict.txt",
                 ),

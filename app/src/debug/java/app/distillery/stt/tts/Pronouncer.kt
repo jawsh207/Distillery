@@ -7,7 +7,8 @@ package app.distillery.stt.tts
  * For each word, in order:
  *  1. a custom pronunciation (Distillery's built-in fixes, then the user's),
  *     written as a "sounds like" respelling such as "BANG gore";
- *  2. the misaki [Lexicon], including regular endings ("Maine's");
+ *  2. the misaki [Lexicon], including regular endings ("Maine's"), with the
+ *     [PosTagger] choosing between a heteronym's readings ("read", "record");
  *  3. Moonshine's own pronunciation model, via [fallback].
  *
  * Moonshine's English G2P works word by word too, so doing it here loses no
@@ -17,16 +18,19 @@ package app.distillery.stt.tts
 class Pronouncer(
     private val lexicon: Lexicon,
     private val custom: Map<String, String>,
+    /** Tags a sentence's tokens with parts of speech, to choose heteronym readings; optional. */
+    private val tagger: PosTagger? = null,
     private val fallback: (String) -> String,
 ) {
 
-    private data class Piece(val text: String, val isWord: Boolean, var phonemes: String = "")
+    private data class Piece(val text: String, val isWord: Boolean, var phonemes: String = "", var tag: String? = null)
 
     fun phonemize(text: String): String {
         val pieces = token.findAll(text.replace('’', '\'').replace('‘', '\'')).map { m ->
             val v = m.value
             Piece(v, isWord = v.first().isLetterOrDigit())
         }.toList()
+        tagPieces(pieces)
 
         for ((i, p) in pieces.withIndex()) {
             if (!p.isWord) {
@@ -37,7 +41,7 @@ class Pronouncer(
                 p.text == "a" -> "ə"
                 p.text == "A" && !isLetterSequence(pieces, i) -> "ə"
                 p.text.equals("the", ignoreCase = true) -> "the" // decided below, once the next word is known
-                else -> word(p.text)
+                else -> word(p.text, p.tag)
             }
         }
         // "the" is "ði" before a vowel sound, "ðə" otherwise.
@@ -56,13 +60,29 @@ class Pronouncer(
         return out.toString().trim()
     }
 
+    /** Gives each word the part of speech of its first treebank-style token. */
+    private fun tagPieces(pieces: List<Piece>) {
+        val tagger = tagger ?: return
+        val tokens = ArrayList<String>()
+        val owner = ArrayList<Int>()
+        pieces.forEachIndexed { i, p ->
+            val parts = if (p.isWord) PosTagger.split(p.text) else listOf(p.text)
+            for (part in parts) {
+                tokens += part
+                owner += i
+            }
+        }
+        val tags = runCatching { tagger.tag(tokens) }.getOrNull() ?: return
+        for (k in tags.indices.reversed()) pieces[owner[k]].tag = tags[k] // first token of each word wins
+    }
+
     /** One word, through custom entries, the lexicon, hyphen parts and finally Moonshine. */
-    fun word(w: String): String {
+    fun word(w: String, tag: String? = null): String {
         custom[w.lowercase()]?.let { return respell(it) }
         if (w.endsWith("'s") || w.endsWith("s'")) {
             custom[w.dropLast(2).lowercase()]?.let { return possessive(respell(it)) }
         }
-        lexicon.phonemes(w)?.let { return it }
+        lexicon.phonemes(w, tag)?.let { return it }
         if ('-' in w) return w.split('-').filter { it.isNotEmpty() }.joinToString(" ") { word(it) }
         return fallback(w)
     }

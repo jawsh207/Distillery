@@ -14,7 +14,12 @@ import java.util.zip.GZIPInputStream
  * ("Maine's", "dogs", "walked", "walking"), following misaki's own rules; only
  * after that does Distillery fall back to Moonshine's pronunciation model.
  */
-class Lexicon(private val entries: Map<String, String>, private val british: Boolean) {
+class Lexicon(
+    private val entries: Map<String, String>,
+    private val british: Boolean,
+    /** Words with several readings: word → (Penn tag, or VERB/NOUN/ADJ/ADV/DEFAULT) → phonemes. */
+    private val heteronyms: Map<String, Map<String, String>> = emptyMap(),
+) {
 
     val size: Int get() = entries.size
 
@@ -28,10 +33,28 @@ class Lexicon(private val entries: Map<String, String>, private val british: Boo
         return null
     }
 
-    /** Listed, or a listed word with a regular ending. */
-    fun phonemes(word: String): String? {
-        if (word.endsWith("'") && word.length > 2) return phonemes(word.dropLast(1)) // "dogs'"
+    /**
+     * Listed, or a listed word with a regular ending. [tag] is the word's
+     * part of speech (Penn Treebank), when known, to pick a heteronym's reading.
+     */
+    fun phonemes(word: String, tag: String? = null): String? {
+        if (word.endsWith("'") && word.length > 2) return phonemes(word.dropLast(1), tag) // "dogs'"
+        if (tag != null) reading(word, tag)?.let { return it }
         return lookup(word) ?: stemS(word) ?: stemEd(word) ?: stemIng(word)
+    }
+
+    /** misaki's rule: the exact tag if listed, else its family (VBD → VERB), else the default. */
+    private fun reading(word: String, tag: String): String? {
+        val readings = heteronyms[word] ?: heteronyms[word.lowercase()] ?: return null
+        return readings[tag] ?: readings[parentTag(tag)] ?: readings["DEFAULT"]
+    }
+
+    private fun parentTag(tag: String): String = when {
+        tag.startsWith("VB") -> "VERB"
+        tag.startsWith("NN") -> "NOUN"
+        tag.startsWith("RB") -> "ADV"
+        tag.startsWith("JJ") -> "ADJ"
+        else -> tag
     }
 
     private fun known(word: String) = lookup(word) != null
@@ -101,8 +124,23 @@ class Lexicon(private val entries: Map<String, String>, private val british: Boo
     companion object {
         private const val US_TAUS = "AIOWYiuæɑəɛɪɹʊʌ"
 
+        /** Reads a gzipped word<TAB>TAG=phonemes;TAG=phonemes file (see tools/build-tts-lexicon.py). */
+        fun loadHeteronyms(gzipped: InputStream): Map<String, Map<String, String>> {
+            val map = HashMap<String, Map<String, String>>(2_000)
+            GZIPInputStream(gzipped).bufferedReader(Charsets.UTF_8).useLines { lines ->
+                for (line in lines) {
+                    val tab = line.indexOf('\t')
+                    if (tab <= 0) continue
+                    map[line.substring(0, tab)] = line.substring(tab + 1).split(';')
+                        .filter { '=' in it }
+                        .associate { it.substringBefore('=') to it.substringAfter('=') }
+                }
+            }
+            return map
+        }
+
         /** Reads a gzipped word<TAB>phonemes file (see tools/build-tts-lexicon.py). */
-        fun load(gzipped: InputStream, british: Boolean): Lexicon {
+        fun load(gzipped: InputStream, british: Boolean, heteronyms: Map<String, Map<String, String>> = emptyMap()): Lexicon {
             val map = HashMap<String, String>(400_000)
             GZIPInputStream(gzipped).bufferedReader(Charsets.UTF_8).useLines { lines ->
                 for (line in lines) {
@@ -110,7 +148,7 @@ class Lexicon(private val entries: Map<String, String>, private val british: Boo
                     if (tab > 0) map[line.substring(0, tab)] = line.substring(tab + 1)
                 }
             }
-            return Lexicon(map, british)
+            return Lexicon(map, british, heteronyms)
         }
     }
 }

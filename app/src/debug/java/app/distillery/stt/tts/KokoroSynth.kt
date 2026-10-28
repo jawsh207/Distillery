@@ -37,6 +37,7 @@ class KokoroSynth(
     private val lexicons = HashMap<Accent, Lexicon>()
     private val g2ps = HashMap<Accent, GraphemeToPhonemizer>()
     private val unknownWords = LinkedHashSet<String>()
+    private var tagger: PosTagger? = null
 
     private var engine: TextToSpeech? = null
     private var engineVoice: KokoroVoice? = null
@@ -96,7 +97,8 @@ class KokoroSynth(
         val accent = voice.accent
         val lexicon = lexicons.getOrPut(accent) { loadLexicon(accent) }
         unknownWords.clear()
-        val phonemes = Pronouncer(lexicon, customPronunciations()) { word ->
+        val posTagger = this.tagger ?: loadTagger().also { this.tagger = it }
+        val phonemes = Pronouncer(lexicon, customPronunciations(), posTagger) { word ->
             unknownWords += word
             fallbackIpa(accent, word)
         }.phonemize(text)
@@ -110,14 +112,26 @@ class KokoroSynth(
         TtsLog.begin("Loading the ${accent.label} lexicon")
         val started = SystemClock.elapsedRealtime()
         try {
-            val lexicon = appContext.assets.open("tts/lexicon-${if (british) "gb" else "us"}.tsv.gz").use {
-                Lexicon.load(it, british)
+            val suffix = if (british) "gb" else "us"
+            val heteronyms = appContext.assets.open("tts/heteronyms-$suffix.tsv.gz").use { Lexicon.loadHeteronyms(it) }
+            val lexicon = appContext.assets.open("tts/lexicon-$suffix.tsv.gz").use {
+                Lexicon.load(it, british, heteronyms)
             }
             TtsLog.add("Lexicon: ${lexicon.size} words in ${SystemClock.elapsedRealtime() - started} ms")
             return lexicon
         } finally {
             TtsLog.end()
         }
+    }
+
+    /** The part-of-speech tagger, or null if it can't load (then heteronyms get their usual reading). */
+    private fun loadTagger(): PosTagger? = try {
+        val started = SystemClock.elapsedRealtime()
+        appContext.assets.open("tts/pos-tagger.tsv.gz").use { PosTagger.load(it) }
+            .also { TtsLog.add("Part-of-speech tagger loaded in ${SystemClock.elapsedRealtime() - started} ms") }
+    } catch (e: Exception) {
+        TtsLog.error("Couldn't load the part-of-speech tagger", e)
+        null
     }
 
     /** Moonshine's pronunciation (CMUdict, then its word model) for a word misaki doesn't list. */
@@ -187,6 +201,7 @@ class KokoroSynth(
         g2ps.values.forEach { runCatching { it.close() } }
         g2ps.clear()
         lexicons.clear()
+        tagger = null
     }
 
     companion object {
