@@ -10,7 +10,7 @@ class PronouncerTest {
         mapOf(
             "Maine" to "mˈAn", "dog" to "dˈɔɡ", "walk" to "wˈɔk", "rain" to "ɹˈAn", "apple" to "ˈæpᵊl",
             "bang" to "bˈæŋ", "gore" to "ɡˈɔɹ", "is" to "ɪz", "in" to "ɪn", "Bangor" to "bˈæŋɡəɹ",
-            "box" to "bˈɑks", "city" to "sˈɪɾi", "F" to "ˈɛf", "B" to "bˈi", "I" to "ˈI",
+            "box" to "bˈɑks", "city" to "sˈɪɾi", "F" to "ˈɛf", "B" to "bˈi", "I" to "ˈI", "X" to "ˈɛks",
         ),
         british = false,
     )
@@ -29,6 +29,12 @@ class PronouncerTest {
     @Test fun customPronunciationsWinAndKeepOneStress() {
         assertEquals("bˈæŋɡɔɹ", pronouncer.word("Bangor"))
         assertEquals("bˈæŋɡɔɹz", pronouncer.word("Bangor's"))
+    }
+
+    @Test fun unknownWords() {
+        assertEquals("ˈɛf ˈɛks", pronouncer.word("fx"))
+        assertEquals("<Yarros>", pronouncer.word("Yarros'"))
+        assertEquals("<Eren>z", pronouncer.word("Eren's"))
     }
 
     @Test fun sentencesKeepPunctuationAndPickTheAndA() {

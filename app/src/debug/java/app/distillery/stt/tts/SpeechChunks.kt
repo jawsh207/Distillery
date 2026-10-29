@@ -22,7 +22,8 @@ object SpeechChunks {
 
     private const val FIRST_CLAUSE_MIN = 18
     private const val LONG_FIRST_SENTENCE = 70
-    private const val LONG_SENTENCE = 260
+    /** Longer sentences are split at commas too, so no piece takes long to make. */
+    private const val LONG_SENTENCE = 160
 
     private val clauseBreak = Regex("""(?<=[,;:—])\s+""")
 

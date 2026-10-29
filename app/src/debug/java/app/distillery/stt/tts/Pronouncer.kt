@@ -79,11 +79,22 @@ class Pronouncer(
     /** One word, through custom entries, the lexicon, hyphen parts and finally Moonshine. */
     fun word(w: String, tag: String? = null): String {
         custom[w.lowercase()]?.let { return respell(it) }
-        if (w.endsWith("'s") || w.endsWith("s'")) {
-            custom[w.dropLast(2).lowercase()]?.let { return possessive(respell(it)) }
-        }
+        if (w.endsWith("'s")) custom[w.dropLast(2).lowercase()]?.let { return possessive(respell(it)) }
+        if (w.endsWith("s'")) custom[w.dropLast(1).lowercase()]?.let { return respell(it) }
         lexicon.phonemes(w, tag)?.let { return it }
         if ('-' in w) return w.split('-').filter { it.isNotEmpty() }.joinToString(" ") { word(it) }
+        // Not listed anywhere: guess, keeping a possessive ending out of the guess.
+        if (w.endsWith("'s") && w.length > 2) return possessive(unknown(w.dropLast(2)))
+        if (w.endsWith("'") && w.length > 1) return unknown(w.dropLast(1))
+        return unknown(w)
+    }
+
+    /** A word nobody lists. Without vowels it's an abbreviation (fx, nbc): say the letters. */
+    private fun unknown(w: String): String {
+        val letters = w.filter { it.isLetter() }
+        if (letters.length in 1..5 && letters.none { it.lowercaseChar() in "aeiouy" }) {
+            return letters.map { c -> lexicon.phonemes(c.uppercaseChar().toString()) ?: fallback(c.toString()) }.joinToString(" ")
+        }
         return fallback(w)
     }
 
