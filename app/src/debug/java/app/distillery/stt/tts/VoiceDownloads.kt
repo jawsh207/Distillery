@@ -108,6 +108,9 @@ class VoiceDownloadWorker(
         return try {
             runInterruptible(Dispatchers.IO) {
                 root.mkdirs()
+                // Stand-ins first: the downloader skips files that exist, so
+                // Moonshine's own English pronunciation files are never fetched.
+                StandIns.install(root, applicationContext.assets)
                 val spec = ModelSpec.tts(TtsLicensePolicy.LANGUAGE, voice.moonshineId)
                 // Same query AssetDownloader makes, checked before anything is fetched.
                 val manifest = TextToSpeech.getTtsDependencies(
@@ -134,6 +137,9 @@ class VoiceDownloadWorker(
                         ),
                     )
                     runCatching { setForegroundAsync(foregroundInfo(voice, fraction)) }
+                }
+                if (!StandIns.verify(root, applicationContext.assets)) {
+                    throw TtsPolicyException("Unexpected files under en_us/; only Distillery's stand-ins belong there")
                 }
                 store.markComplete(voice, files)
             }

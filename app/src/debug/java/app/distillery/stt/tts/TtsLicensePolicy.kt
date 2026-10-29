@@ -9,16 +9,16 @@ import java.net.URI
 class TtsPolicyException(message: String) : SecurityException(message)
 
 /**
- * Keeps text to speech to the parts whose licenses are known to be open source,
- * or are still being confirmed, and never anything ruled out.
+ * Keeps text to speech to parts whose licenses are known to be open source.
  *
- * Allowed, and why:
+ * Downloaded, and why:
  *  - `kokoro/…`: the Kokoro-82M model, its config and its voice files.
  *    Apache-2.0 (hexgrad/Kokoro-82M).
- *  - `en_us/…`: Moonshine's English pronunciation (G2P) data: a dictionary
- *    built from CMUdict (BSD-2-Clause) plus a small model for words not in it.
- *    Moonshine hasn't yet stated the license of these files, which is why text
- *    to speech is in dev builds only.
+ *  - `en_us/…`: allowed in the manifest only by name. Moonshine lists its
+ *    English pronunciation data there, whose license it hasn't stated, and
+ *    Distillery never downloads it: [StandIns]
+ *    puts its own placeholders at those paths first, so the downloader skips
+ *    them, and the result is checked afterwards.
  *
  * Ruled out, and refused even if a catalog change starts listing them: ZipVoice
  * voice cloning (trained on non-commercial data), Piper voices, and every

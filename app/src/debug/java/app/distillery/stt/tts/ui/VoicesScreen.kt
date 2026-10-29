@@ -250,8 +250,8 @@ fun DevNoticeCard() {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("Dev builds only", style = MaterialTheme.typography.titleMedium)
             BodyText(
-                "The Kokoro voices are Apache-2.0. The English pronunciation data comes from Moonshine, " +
-                    "which hasn't confirmed its license yet, so text to speech stays out of releases until it does.",
+                "Text to speech is still being tested, so it's only in dev builds. Everything it uses is open source: " +
+                    "Kokoro's voices, misaki's dictionaries and Distillery's own tagger and word guesser.",
             )
         }
     }

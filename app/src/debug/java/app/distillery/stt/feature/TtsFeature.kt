@@ -101,12 +101,8 @@ object TtsFeature {
                     "CC-BY-SA-4.0", "CC-BY-SA-4.0-ud-english-ewt.txt",
                 ),
                 OssComponent(
-                    "cmudict", "CMU Pronouncing Dictionary", "Carnegie Mellon University (via Moonshine's English dictionary)",
-                    "BSD-2-Clause", "BSD-2-Clause-cmudict.txt",
-                ),
-                OssComponent(
-                    "moonshine-g2p-en", "Moonshine English pronunciation data", "Moonshine AI · dictionary, config and word model",
-                    "Not yet confirmed", "Moonshine-G2P-en-unconfirmed.txt",
+                    "word-guesser", "Word guesser", "Distillery's own letter-to-sound model, trained on misaki's lexicons",
+                    "Apache-2.0", "Apache-2.0-misaki.txt",
                 ),
             ),
         ),

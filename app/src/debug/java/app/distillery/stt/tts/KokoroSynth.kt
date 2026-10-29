@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package app.distillery.stt.tts
 
-import ai.moonshine.voice.GraphemeToPhonemizer
 import ai.moonshine.voice.TextToSpeech
 import ai.moonshine.voice.TranscriberOption
 import android.content.Context
@@ -35,7 +34,7 @@ class KokoroSynth(
     }
 
     private val lexicons = HashMap<Accent, Lexicon>()
-    private val g2ps = HashMap<Accent, GraphemeToPhonemizer>()
+    private val guessers = HashMap<Accent, WordGuesser?>()
     private val unknownWords = LinkedHashSet<String>()
     private var tagger: PosTagger? = null
 
@@ -65,17 +64,14 @@ class KokoroSynth(
         unload?.cancel(false)
         try {
             val tts = ensureLoaded(voice)
-            val phonemes = try {
-                phonemize(voice, text)
-            } catch (e: Throwable) {
-                TtsLog.error("Pronouncing failed; letting Moonshine pronounce it", e)
-                null
-            }
-            if (phonemes != null && phonemes.none { it.isLetter() }) return@synchronized FloatArray(0) to SAMPLE_RATE
+            // Distillery always works out the phonemes itself: Moonshine's own
+            // pronunciation data is never installed, only stand-ins (StandIns).
+            val phonemes = phonemize(voice, text)
+            if (phonemes.none { it.isLetter() }) return@synchronized FloatArray(0) to SAMPLE_RATE
             TtsLog.begin("Synthesizing ${text.length} characters")
             val started = SystemClock.elapsedRealtime()
             val options = listOf(TranscriberOption("speed", String.format(Locale.US, "%.2f", speed)))
-            val result = if (phonemes != null) tts.synthesizeFromPhonemes(phonemes, options) else tts.synthesize(text, options)
+            val result = tts.synthesizeFromPhonemes(phonemes, options)
             val samples = result.samples ?: FloatArray(0)
             val audioMs = if (result.sampleRateHz > 0) samples.size * 1000L / result.sampleRateHz else 0L
             TtsLog.add(
@@ -100,7 +96,7 @@ class KokoroSynth(
         val posTagger = this.tagger ?: loadTagger().also { this.tagger = it }
         val phonemes = Pronouncer(lexicon, customPronunciations(), posTagger) { word ->
             unknownWords += word
-            fallbackIpa(accent, word)
+            guess(accent, word)
         }.phonemize(text)
         if (unknownWords.isNotEmpty()) TtsLog.add("Not in the lexicon (guessed): ${unknownWords.joinToString()}")
         TtsLog.add("Phonemes: ${phonemes.take(300)}")
@@ -134,12 +130,20 @@ class KokoroSynth(
         null
     }
 
-    /** Moonshine's pronunciation (CMUdict, then its word model) for a word misaki doesn't list. */
-    private fun fallbackIpa(accent: Accent, word: String): String {
-        val g2p = g2ps.getOrPut(accent) {
-            GraphemeToPhonemizer(if (accent == Accent.BRITISH) "en_gb" else "en_us", store.root.absolutePath, null)
+    /** Distillery's own guess for a word the lexicon doesn't list. */
+    private fun guess(accent: Accent, word: String): String {
+        val guesser = guessers.getOrPut(accent) {
+            val name = if (accent == Accent.BRITISH) "gb" else "us"
+            try {
+                val started = SystemClock.elapsedRealtime()
+                appContext.assets.open("tts/guesser-$name.tsv.gzip").use { WordGuesser.load(it) }
+                    .also { TtsLog.add("Word guesser loaded in ${SystemClock.elapsedRealtime() - started} ms") }
+            } catch (e: Exception) {
+                TtsLog.error("Couldn't load the word guesser", e)
+                null
+            }
         }
-        return g2p.toIpa(word).trim()
+        return guesser?.guess(word).orEmpty()
     }
 
     fun unloadNow() = synchronized(lock) {
@@ -152,6 +156,8 @@ class KokoroSynth(
         if (!store.isInstalled(voice)) throw VoiceNotInstalledException(voice)
         engine?.let { if (engineVoice == voice) return it }
         release()
+        val replaced = StandIns.install(store.root, appContext.assets)
+        if (replaced > 0) TtsLog.add("Put Distillery's stand-ins in place of Moonshine's pronunciation files ($replaced)")
         val missing = store.missingFiles(voice)
         TtsLog.add(
             "Voice ${voice.id}: ${store.filesFor(voice).size} files in ${store.root}" +
@@ -198,8 +204,7 @@ class KokoroSynth(
         }
         engine = null
         engineVoice = null
-        g2ps.values.forEach { runCatching { it.close() } }
-        g2ps.clear()
+        guessers.clear()
         lexicons.clear()
         tagger = null
     }
