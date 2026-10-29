@@ -21,12 +21,6 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = false
-
-        ndk {
-            // Moonshine ships native code for these ABIs. arm64-v8a covers
-            // every Android 16 phone; x86_64 is for the emulator.
-            abiFilters += listOf("arm64-v8a", "x86_64")
-        }
     }
 
     // Release signing. Values come from environment variables (CI secrets) or,
@@ -51,8 +45,16 @@ android {
         }
     }
 
+    // Native code (Moonshine, ONNX Runtime) per ABI. arm64-v8a covers every
+    // Android 16 phone, so releases carry only that; dev builds also carry
+    // x86_64 for the emulator. (Set per build type: filters set on
+    // defaultConfig would add to these rather than be replaced.)
     buildTypes {
+        debug {
+            ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
+        }
         release {
+            ndk { abiFilters += listOf("arm64-v8a") }
             signingConfigs.findByName("release")?.let { signingConfig = it }
             isMinifyEnabled = true
             isShrinkResources = true

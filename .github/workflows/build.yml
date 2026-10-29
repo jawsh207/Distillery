@@ -82,6 +82,11 @@ jobs:
             unzip -l "$DEBUG_APK" | grep -q "assets/tts/$f\$" \
               || { echo "::error title=Dev build::assets/tts/$f is missing from the dev APK"; exit 1; }
           done
+          # Releases are arm64-v8a only; dev builds also carry x86_64 for the emulator.
+          unzip -l "$APK" | grep -q 'lib/x86_64/' \
+            && { echo "::error title=Release build::The release APK contains x86_64 libraries"; exit 1; }
+          unzip -l "$APK" | grep -q 'lib/arm64-v8a/' \
+            || { echo "::error title=Release build::The release APK has no arm64-v8a libraries"; exit 1; }
           echo "Release has no text to speech; dev build has it, with the full ONNX Runtime."
 
       - name: Report build errors

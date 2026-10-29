@@ -33,7 +33,8 @@ git -C third_party/moonshine checkout v0.1.5
 rm -rf third_party/moonshine/core/third-party/onnxruntime/lib/android/*/libonnxruntime.so
 export ANDROID_SDK_ROOT=/path/to/sdk
 export MOONSHINE_ORT_ROOT="$PWD/build/ort"
-third_party/moonshine/scripts/build-ort-android.sh force arm64-v8a x86_64
+# Release APKs are arm64-v8a only; add x86_64 to also build a debug APK for the emulator.
+third_party/moonshine/scripts/build-ort-android.sh force arm64-v8a
 
 # 3. Build the app against the source checkout
 ./gradlew assembleRelease -Pdistillery.moonshineSource=third_party/moonshine
