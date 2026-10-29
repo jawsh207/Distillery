@@ -9,6 +9,7 @@ asks it to pronounce text (it hands Kokoro phonemes directly). These stand-ins
 satisfy that check and contain nothing of Moonshine's:
 
   dict.tsv          one placeholder entry
+  g2p-config.json   the one setting the loader checks
   onnx-config.json  the tables the loader validates
   model.ort         a one-node Identity model in ONNX Runtime format
 
@@ -28,6 +29,10 @@ out = Path(__file__).resolve().parent.parent / "app/src/debug/assets/tts/standin
 out.mkdir(parents=True, exist_ok=True)
 
 (out / "dict.tsv").write_text("distillery\tdɪstˈɪləɹi\n", encoding="utf-8")
+(out / "g2p-config.json").write_text(
+    '{\n  "uses_oov_model": true,\n  "note": "Distillery stand-in. Distillery pronounces words itself."\n}\n',
+    encoding="utf-8",
+)
 
 config = {
     "config_schema_version": 1,

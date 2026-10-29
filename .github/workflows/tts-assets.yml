@@ -1,29 +1,78 @@
-name: Generate TTS stand-in files
+name: Generate TTS data
 
-# Run by hand when tools/make-g2p-standin.py changes. Commits the result.
+# Run by hand when a generator in tools/ changes; commits what it makes:
+#  - stand-ins for Moonshine's English pronunciation files (make-g2p-standin.py)
+#  - the word guessers, trained on misaki's lexicons (train-word-guesser.py)
 on:
   workflow_dispatch:
 
 permissions:
   contents: write
 
+env:
+  # misaki (Apache-2.0), pinned so the trained models are reproducible.
+  MISAKI_COMMIT: fba1236595f2d2bf21d414ba6e57d25256afada3
+
 jobs:
-  generate:
+  standin:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Generate
-        run: |
+      - run: |
           pip install onnx==1.17.0 onnxruntime==1.23.2
           python3 tools/make-g2p-standin.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: standin
+          path: app/src/debug/assets/tts/standin/
+
+  guesser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    strategy:
+      matrix:
+        accent: [us, gb]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Get misaki
+        run: |
+          git init -q misaki && cd misaki
+          git fetch -q --depth 1 https://github.com/hexgrad/misaki "$MISAKI_COMMIT"
+          git checkout -q FETCH_HEAD
+      - name: Train
+        run: python3 tools/train-word-guesser.py misaki ${{ matrix.accent }} | tee report.txt
+      - name: Report
+        run: echo "::notice title=Word guesser ${{ matrix.accent }}::$(tr '\n' ' ' < report.txt)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: guesser-${{ matrix.accent }}
+          path: app/src/debug/assets/tts/guesser-${{ matrix.accent }}.tsv.gzip
+
+  commit:
+    needs: [standin, guesser]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: standin
+          path: app/src/debug/assets/tts/standin/
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: guesser-*
+          path: app/src/debug/assets/tts/
+          merge-multiple: true
       - name: Commit
         run: |
           git config user.name jawsh207
           git config user.email jawsh@tuta.com
-          git add app/src/debug/assets/tts/standin
+          git add app/src/debug/assets/tts
           git diff --cached --quiet && { echo "No changes"; exit 0; }
-          git commit -m "Dev builds: regenerate the TTS stand-in files"
+          git commit -m "Dev builds: regenerate the TTS stand-ins and word guessers"
           git push
