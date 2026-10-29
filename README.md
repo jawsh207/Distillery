@@ -2,11 +2,16 @@
 
 # Distillery
 
-On-device speech-to-text for Android, powered by [Moonshine](https://github.com/moonshine-ai/moonshine).
+On-device speech to text and text to speech for Android, powered by
+[Moonshine](https://github.com/moonshine-ai/moonshine) and [Kokoro](https://huggingface.co/hexgrad/Kokoro-82M).
 
 Distillery is a system **speech recognition service** (`android.speech.RecognitionService`). Any app
 that uses Android's `SpeechRecognizer` can use it: keyboards and apps get live dictation in the
 background with no popup or app switch, and apps can hand it an audio recording to transcribe.
+
+It is also a system **text-to-speech engine** (`android.speech.tts.TextToSpeechService`) with
+English Kokoro voices, for any app that reads text aloud. Text to speech is in dev builds while
+it's being tested; see [Text to speech](#text-to-speech-dev-builds-only).
 
 - Fully on device: no network during recognition, no Google services, no account.
 - Live dictation with partial results while you speak, and automatic stop after a pause.
