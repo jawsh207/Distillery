@@ -54,6 +54,18 @@ class KokoroSynth(
         }
     }
 
+    /** Loads [voice] and everything pronouncing needs (lexicon, tagger), ahead of time. */
+    fun warmUp(voice: KokoroVoice) = synchronized(lock) {
+        unload?.cancel(false)
+        try {
+            ensureLoaded(voice)
+            lexicons.getOrPut(voice.accent) { loadLexicon(voice.accent) }
+            if (tagger == null) tagger = loadTagger()
+        } finally {
+            scheduleUnload()
+        }
+    }
+
     /**
      * Synthesizes [text] as one utterance.
      *
@@ -211,7 +223,8 @@ class KokoroSynth(
 
     companion object {
         private const val TAG = "DistilleryTts"
-        const val IDLE_UNLOAD_MS = 90_000L
+        /** Kokoro is freed after this long unused; reloading takes seconds, so not too soon. */
+        const val IDLE_UNLOAD_MS = 5 * 60_000L
         const val SAMPLE_RATE = 24_000
 
         /** Splits text into sentences with Moonshine's splitter; falls back to the whole text. */

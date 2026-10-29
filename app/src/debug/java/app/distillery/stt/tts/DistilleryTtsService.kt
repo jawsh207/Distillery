@@ -7,7 +7,12 @@ import android.speech.tts.SynthesisRequest
 import android.speech.tts.TextToSpeech
 import android.speech.tts.TextToSpeechService
 import android.speech.tts.Voice
+import android.os.SystemClock
 import android.util.Log
+import java.util.concurrent.Executors
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.Locale
 
 /**
@@ -23,12 +28,29 @@ class DistilleryTtsService : TextToSpeechService() {
 
     private val runtime by lazy { TtsRuntime.get(this) }
 
+    /** Makes audio ahead of playback; also loads the engine before it's needed. */
+    private val synthesis = Executors.newSingleThreadExecutor { r ->
+        Thread(r, "distillery-tts-synth").apply { isDaemon = true }
+    }
+
     @Volatile private var stopRequested = false
     @Volatile private var currentAccent: Accent? = null
 
     override fun onCreate() {
         super.onCreate()
         TtsLog.add("Engine service started")
+        // Load the default voice now, so the first words don't wait for it.
+        defaultVoice(null)?.let(::warmUp)
+    }
+
+    private fun warmUp(voice: KokoroVoice) {
+        synthesis.execute {
+            try {
+                runtime.synth.warmUp(voice)
+            } catch (e: Throwable) {
+                TtsLog.error("Couldn't load ${voice.id} ahead of time", e)
+            }
+        }
     }
 
     override fun onDestroy() {
@@ -90,6 +112,7 @@ class DistilleryTtsService : TextToSpeechService() {
         val voice = KokoroVoice.fromVoiceName(voiceName) ?: return TextToSpeech.ERROR
         if (!runtime.store.isInstalled(voice)) return TextToSpeech.ERROR
         currentAccent = voice.accent
+        warmUp(voice)
         return TextToSpeech.SUCCESS
     }
 
@@ -128,36 +151,70 @@ class DistilleryTtsService : TextToSpeechService() {
         val speed = (request.speechRate / 100f).coerceIn(MIN_SPEED, MAX_SPEED)
         val spoken = TextNormalizer.normalize(text)
         if (spoken != text) TtsLog.add("Read as: ${spoken.take(400)}")
-        val sentences = KokoroSynth.sentences(spoken)
-        if (sentences.isEmpty()) {
+        val chunks = SpeechChunks.chunks(KokoroSynth.sentences(spoken))
+        if (chunks.isEmpty()) {
             callback.start(DEFAULT_SAMPLE_RATE, AudioFormat.ENCODING_PCM_16BIT, 1)
             callback.done()
             return
         }
 
-        TtsLog.add("Speaking with ${voice.id} at ${speed}x, ${sentences.size} sentence(s)")
+        TtsLog.add("Speaking with ${voice.id} at ${speed}x, ${chunks.size} piece(s)")
+        val began = SystemClock.elapsedRealtime()
+        // The next piece is made on the synthesis thread while this thread
+        // hands the current one to Android, so pieces play back to back.
+        val queue = LinkedBlockingQueue<Made>(2)
+        val cancelled = AtomicBoolean(false)
+        fun put(item: Made) {
+            while (!cancelled.get() && !queue.offer(item, 100, TimeUnit.MILLISECONDS)) { /* wait for room */ }
+        }
+        synthesis.execute {
+            try {
+                for (chunk in chunks) {
+                    if (cancelled.get()) return@execute
+                    val (samples, rate) = runtime.synth.synthesize(voice, chunk.text, speed)
+                    put(Made.Audio(SpeechChunks.tidy(samples, rate, chunk.pauseMs), rate))
+                }
+                put(Made.End)
+            } catch (e: Throwable) {
+                put(Made.Failed(e))
+            }
+        }
+
         var started = false
         try {
-            for ((index, sentence) in sentences.withIndex()) {
-                if (stopRequested) return TtsLog.add("Stopped before sentence ${index + 1}")
-                val (samples, rate) = runtime.synth.synthesize(voice, sentence, speed)
-                if (stopRequested) return TtsLog.add("Stopped after sentence ${index + 1}")
-                if (!started) {
-                    val result = callback.start(rate, AudioFormat.ENCODING_PCM_16BIT, 1)
-                    if (result != TextToSpeech.SUCCESS) return TtsLog.add("Playback refused to start ($result)")
-                    started = true
+            while (true) {
+                if (stopRequested) return TtsLog.add("Stopped")
+                when (val item = queue.poll(100, TimeUnit.MILLISECONDS) ?: continue) {
+                    is Made.Audio -> {
+                        if (!started) {
+                            val result = callback.start(item.rate, AudioFormat.ENCODING_PCM_16BIT, 1)
+                            if (result != TextToSpeech.SUCCESS) return TtsLog.add("Playback refused to start ($result)")
+                            started = true
+                            TtsLog.add("First audio after ${SystemClock.elapsedRealtime() - began} ms")
+                        }
+                        if (!deliver(item.samples, callback)) return TtsLog.add("Playback stopped taking audio")
+                    }
+                    is Made.Failed -> throw item.error
+                    Made.End -> break
                 }
-                if (!deliver(samples, callback)) return TtsLog.add("Playback stopped taking audio")
             }
             callback.done()
-            TtsLog.add("Done")
+            TtsLog.add("Done in ${SystemClock.elapsedRealtime() - began} ms")
         } catch (e: VoiceNotInstalledException) {
             TtsLog.add("Refused: ${e.message}")
             fail(callback, TextToSpeech.ERROR_NOT_INSTALLED_YET, started)
         } catch (e: Throwable) {
             Log.e(TAG, "Synthesis failed", e)
             fail(callback, TextToSpeech.ERROR_SYNTHESIS, started)
+        } finally {
+            cancelled.set(true)
         }
+    }
+
+    private sealed interface Made {
+        class Audio(val samples: FloatArray, val rate: Int) : Made
+        class Failed(val error: Throwable) : Made
+        data object End : Made
     }
 
     /**
