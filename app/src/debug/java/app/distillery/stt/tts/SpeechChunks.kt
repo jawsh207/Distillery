@@ -17,8 +17,8 @@ data class SpeechChunk(val text: String, val pauseMs: Int)
  */
 object SpeechChunks {
 
-    const val SENTENCE_PAUSE_MS = 220
-    const val CLAUSE_PAUSE_MS = 90
+    const val SENTENCE_PAUSE_MS = 500
+    const val CLAUSE_PAUSE_MS = 250
 
     private const val FIRST_CLAUSE_MIN = 18
     private const val LONG_FIRST_SENTENCE = 70
