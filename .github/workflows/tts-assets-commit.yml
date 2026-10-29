@@ -1,0 +1,43 @@
+name: Commit TTS data from a run
+
+# Commits the files a "Generate TTS data" run produced, without regenerating.
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Run ID of the Generate TTS data run"
+        required: true
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: standin
+          path: app/src/debug/assets/tts/standin/
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: guesser-*
+          path: app/src/debug/assets/tts/
+          merge-multiple: true
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+      - name: Commit
+        run: |
+          set -x
+          ls -laR app/src/debug/assets/tts > files.txt 2>&1
+          echo "::notice title=Files::$(tr '\n' '|' < files.txt)"
+          git config user.name jawsh207
+          git config user.email jawsh@tuta.com
+          git add app/src/debug/assets/tts
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -m "Dev builds: add the trained word guessers" > out.txt 2>&1 || { echo "::error title=commit::$(tr '\n' '|' < out.txt)"; exit 1; }
+          git push > out.txt 2>&1 || { echo "::error title=push::$(tr '\n' '|' < out.txt)"; exit 1; }
