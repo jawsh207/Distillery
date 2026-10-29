@@ -1,0 +1,1 @@
+Smaller download: the app now includes native code for 64-bit ARM phones only (every Android 16 phone), dropping the copy that only the emulator used.
