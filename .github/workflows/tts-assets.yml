@@ -52,7 +52,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: guesser-${{ matrix.accent }}
-          path: app/src/debug/assets/tts/guesser-${{ matrix.accent }}.tsv.gzip
+          path: app/src/debug/assets/tts/guesser-${{ matrix.accent }}.bin.gzip
 
   commit:
     needs: [standin, guesser]

@@ -6,7 +6,7 @@ An averaged perceptron (Collins 2002; the feature set follows Matthew
 Honnibal's well-known 2013 write-up), trained on the Universal Dependencies
 English Web Treebank (CC BY-SA 4.0), predicting its Penn Treebank tags
 (XPOS) — the tags misaki's lexicon keys its heteronyms by. The model is
-written as app/src/debug/assets/tts/pos-tagger.tsv.gzip and so is itself
+written as app/src/debug/assets/tts/pos-tagger.bin.gzip and so is itself
 CC BY-SA 4.0. The Kotlin side (PosTagger.kt) must compute exactly the same
 features as `features()` here.
 
@@ -186,15 +186,11 @@ def main():
 
     classes = sorted(model.classes)
     index = {c: i for i, c in enumerate(classes)}
-    out = Path(__file__).resolve().parent.parent / "app/src/debug/assets/tts/pos-tagger.tsv.gzip"
-    with open(out, "wb") as raw, gzip.GzipFile(fileobj=raw, mode="wb", mtime=0, filename="") as gz:
-        lines = ["# English POS tagger: averaged perceptron trained on UD English EWT (CC BY-SA 4.0).",
-                 "C\t" + " ".join(classes)]
-        lines += [f"T\t{w}\t{t}" for w, t in sorted(tagdict.items())]
-        for f in sorted(model.weights):
-            ws = model.weights[f]
-            lines.append("F\t" + f + "\t" + ",".join(f"{index[c]}:{round(w * SCALE)}" for c, w in sorted(ws.items())))
-        gz.write(("\n".join(lines) + "\n").encode("utf-8"))
+    out = Path(__file__).resolve().parent.parent / "app/src/debug/assets/tts/pos-tagger.bin.gzip"
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from perceptron_pack import pack
+    weights = {f: {index[c]: round(w * SCALE) for c, w in ws.items()} for f, ws in model.weights.items()}
+    pack(classes, {w: index[t] for w, t in tagdict.items()}, weights, out)
     print(f"{out.name}: {len(model.weights)} features, {len(tagdict)} tagdict words, {out.stat().st_size // 1024} KB")
 
 

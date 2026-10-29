@@ -7,6 +7,7 @@ import android.content.Context
 import android.os.SystemClock
 import android.util.Log
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -33,13 +34,14 @@ class KokoroSynth(
         Thread(r, "distillery-tts-idle").apply { isDaemon = true }
     }
 
-    private val lexicons = HashMap<Accent, Lexicon>()
-    private val guessers = HashMap<Accent, WordGuesser?>()
+    // Read from binder threads by isWarm(), so concurrent maps.
+    private val lexicons = ConcurrentHashMap<Accent, Lexicon>()
+    private val guessers = ConcurrentHashMap<Accent, Result<WordGuesser>>()
     private val unknownWords = LinkedHashSet<String>()
-    private var tagger: PosTagger? = null
+    @Volatile private var tagger: PosTagger? = null
 
-    private var engine: TextToSpeech? = null
-    private var engineVoice: KokoroVoice? = null
+    @Volatile private var engine: TextToSpeech? = null
+    @Volatile private var engineVoice: KokoroVoice? = null
     private var unload: ScheduledFuture<*>? = null
 
     /** Milliseconds the last load took, for the test screen. */
@@ -54,13 +56,20 @@ class KokoroSynth(
         }
     }
 
-    /** Loads [voice] and everything pronouncing needs (lexicon, tagger), ahead of time. */
+    /** True when [voice] and what pronouncing needs are already loaded. */
+    fun isWarm(voice: KokoroVoice): Boolean =
+        engineVoice == voice && lexicons.containsKey(voice.accent) && tagger != null && guessers.containsKey(voice.accent)
+
+    /** Loads [voice] and everything pronouncing needs (lexicon, tagger, guesser), ahead of time. */
     fun warmUp(voice: KokoroVoice) = synchronized(lock) {
         unload?.cancel(false)
         try {
+            if (isWarm(voice)) return@synchronized
+            TtsLog.add("Loading ${voice.id} ahead of time")
             ensureLoaded(voice)
             lexicons.getOrPut(voice.accent) { loadLexicon(voice.accent) }
             if (tagger == null) tagger = loadTagger()
+            guess(voice.accent, "")
         } finally {
             scheduleUnload()
         }
@@ -135,7 +144,7 @@ class KokoroSynth(
     /** The part-of-speech tagger, or null if it can't load (then heteronyms get their usual reading). */
     private fun loadTagger(): PosTagger? = try {
         val started = SystemClock.elapsedRealtime()
-        appContext.assets.open("tts/pos-tagger.tsv.gzip").use { PosTagger.load(it) }
+        appContext.assets.open("tts/pos-tagger.bin.gzip").use { PosTagger.load(it) }
             .also { TtsLog.add("Part-of-speech tagger loaded in ${SystemClock.elapsedRealtime() - started} ms") }
     } catch (e: Exception) {
         TtsLog.error("Couldn't load the part-of-speech tagger", e)
@@ -146,16 +155,12 @@ class KokoroSynth(
     private fun guess(accent: Accent, word: String): String {
         val guesser = guessers.getOrPut(accent) {
             val name = if (accent == Accent.BRITISH) "gb" else "us"
-            try {
-                val started = SystemClock.elapsedRealtime()
-                appContext.assets.open("tts/guesser-$name.tsv.gzip").use { WordGuesser.load(it) }
-                    .also { TtsLog.add("Word guesser loaded in ${SystemClock.elapsedRealtime() - started} ms") }
-            } catch (e: Exception) {
-                TtsLog.error("Couldn't load the word guesser", e)
-                null
-            }
+            val started = SystemClock.elapsedRealtime()
+            runCatching { appContext.assets.open("tts/guesser-$name.bin.gzip").use { WordGuesser.load(it) } }
+                .onSuccess { TtsLog.add("Word guesser loaded in ${SystemClock.elapsedRealtime() - started} ms") }
+                .onFailure { TtsLog.error("Couldn't load the word guesser", it) }
         }
-        return guesser?.guess(word).orEmpty()
+        return guesser.getOrNull()?.guess(word).orEmpty()
     }
 
     fun unloadNow() = synchronized(lock) {

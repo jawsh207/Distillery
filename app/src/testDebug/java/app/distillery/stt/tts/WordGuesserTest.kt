@@ -9,7 +9,7 @@ import java.io.File
 /** Uses the real models from the dev build's assets. */
 class WordGuesserTest {
 
-    private val us by lazy { File("src/debug/assets/tts/guesser-us.tsv.gzip").inputStream().use { WordGuesser.load(it) } }
+    private val us by lazy { File("src/debug/assets/tts/guesser-us.bin.gzip").inputStream().use { WordGuesser.load(it) } }
 
     @Test fun oneMainStress() {
         assertEquals("bˈæŋɡˌɔɹ", WordGuesser.fixStress("bˈæŋɡˈɔɹ"))

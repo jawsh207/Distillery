@@ -2,23 +2,20 @@
 package app.distillery.stt.tts
 
 import java.io.InputStream
-import java.util.zip.GZIPInputStream
 
 /**
  * English part-of-speech tagger: an averaged perceptron giving Penn Treebank
  * tags (NN, VB, VBD, JJ, …), used to pick between a heteronym's readings
  * ("I read" now vs. "I read" yesterday, "a record" vs. "to record").
  *
- * The model (assets/tts/pos-tagger.tsv.gzip) is trained by
+ * The model (assets/tts/pos-tagger.bin.gzip) is trained by
  * tools/train-pos-tagger.py on the Universal Dependencies English Web Treebank
  * and is CC BY-SA 4.0. [features] must match `features()` in that script
  * exactly, or the weights mean nothing.
  */
-class PosTagger private constructor(
-    private val classes: Array<String>,
-    private val tagdict: Map<String, String>,
-    private val weights: Map<String, IntArray>, // feature → class index, weight pairs, flattened
-) {
+class PosTagger private constructor(private val model: PackedPerceptron) {
+
+    private val classes = model.classes
 
     /** One tag per token. Tokens are words and punctuation, clitics split off ("do", "n't"). */
     fun tag(tokens: List<String>): List<String> {
@@ -30,16 +27,9 @@ class PosTagger private constructor(
         var prev2 = START[1]
         val scores = IntArray(classes.size)
         return tokens.mapIndexed { i, word ->
-            val tag = tagdict[word] ?: run {
+            val tag = model.tagdict[word]?.let { classes[it] } ?: run {
                 scores.fill(0)
-                for (f in features(i, word, context, prev, prev2)) {
-                    val w = weights[f] ?: continue
-                    var k = 0
-                    while (k < w.size) {
-                        scores[w[k]] += w[k + 1]
-                        k += 2
-                    }
-                }
+                for (f in features(i, word, context, prev, prev2)) model.add(f, scores)
                 // Highest score; ties go to the alphabetically last tag, as in Python's max.
                 var best = 0
                 for (c in 1 until classes.size) {
@@ -86,31 +76,8 @@ class PosTagger private constructor(
             )
         }
 
-        fun load(gzipped: InputStream): PosTagger {
-            var classes = emptyArray<String>()
-            val tagdict = HashMap<String, String>()
-            val weights = HashMap<String, IntArray>(150_000)
-            GZIPInputStream(gzipped).bufferedReader(Charsets.UTF_8).useLines { lines ->
-                for (line in lines) {
-                    if (line.isEmpty() || line.startsWith("#")) continue
-                    val parts = line.split('\t')
-                    when (parts[0]) {
-                        "C" -> classes = parts[1].split(' ').toTypedArray()
-                        "T" -> tagdict[parts[1]] = parts[2]
-                        "F" -> {
-                            val pairs = parts[2].split(',')
-                            val arr = IntArray(pairs.size * 2)
-                            pairs.forEachIndexed { k, p ->
-                                arr[2 * k] = p.substringBefore(':').toInt()
-                                arr[2 * k + 1] = p.substringAfter(':').toInt()
-                            }
-                            weights[parts[1]] = arr
-                        }
-                    }
-                }
-            }
-            return PosTagger(classes, tagdict, weights)
-        }
+        /** Reads the packed model (see tools/perceptron_pack.py). */
+        fun load(gzipped: InputStream): PosTagger = PosTagger(PackedPerceptron.load(gzipped))
 
         private val clitic = Regex("""(?i)^(.+?)(n't|'s|'re|'ll|'ve|'d|'m)$""")
 

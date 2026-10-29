@@ -78,7 +78,7 @@ jobs:
             || { echo "::error title=Dev build::The dev APK doesn't carry the full ONNX Runtime (dev $dev_ort, release $rel_ort bytes)"; exit 1; }
           # The dev build's pronunciation data must be in the APK under the names
           # the code opens (the build renames *.gz assets, which once broke this).
-          for f in lexicon-us.tsv.gzip lexicon-gb.tsv.gzip heteronyms-us.tsv.gzip heteronyms-gb.tsv.gzip pos-tagger.tsv.gzip guesser-us.tsv.gzip guesser-gb.tsv.gzip pronunciations.tsv standin/dict.tsv standin/g2p-config.json standin/model.ort standin/onnx-config.json; do
+          for f in lexicon-us.tsv.gzip lexicon-gb.tsv.gzip heteronyms-us.tsv.gzip heteronyms-gb.tsv.gzip pos-tagger.bin.gzip guesser-us.bin.gzip guesser-gb.bin.gzip pronunciations.tsv standin/dict.tsv standin/g2p-config.json standin/model.ort standin/onnx-config.json; do
             unzip -l "$DEBUG_APK" | grep -q "assets/tts/$f\$" \
               || { echo "::error title=Dev build::assets/tts/$f is missing from the dev APK"; exit 1; }
           done

@@ -2,7 +2,6 @@
 package app.distillery.stt.tts
 
 import java.io.InputStream
-import java.util.zip.GZIPInputStream
 
 /**
  * Guesses how to say a word that isn't in the lexicon (mostly names), letter
@@ -12,10 +11,9 @@ import java.util.zip.GZIPInputStream
  * Trained by tools/train-word-guesser.py on misaki's lexicons (Apache-2.0), in
  * Kokoro's phoneme set. [features] must match `features()` in that script.
  */
-class WordGuesser private constructor(
-    private val labels: Array<String>,
-    private val weights: Map<String, IntArray>, // feature → class index, weight pairs, flattened
-) {
+class WordGuesser private constructor(private val model: PackedPerceptron) {
+
+    private val labels = model.classes
 
     /** Kokoro phonemes for [word], or "" if it has no letters to go on. */
     fun guess(word: String): String {
@@ -26,18 +24,7 @@ class WordGuesser private constructor(
         var p2 = PAD
         val out = StringBuilder()
         for (i in w.indices) {
-            scores.fill(0)
-            for (f in features(w, i, p1, p2)) {
-                val ws = weights[f] ?: continue
-                var k = 0
-                while (k < ws.size) {
-                    scores[ws[k]] += ws[k + 1]
-                    k += 2
-                }
-            }
-            var best = 0
-            for (c in 1 until scores.size) if (scores[c] > scores[best]) best = c
-            val label = labels[best]
+            val label = labels[model.best(features(w, i, p1, p2), scores)]
             if (label != "_") out.append(label)
             p2 = p1
             p1 = label
@@ -86,28 +73,7 @@ class WordGuesser private constructor(
             return if (v < 0) ph else ph.substring(0, v) + "ˈ" + ph.substring(v)
         }
 
-        fun load(gzipped: InputStream): WordGuesser {
-            var labels = emptyArray<String>()
-            val weights = HashMap<String, IntArray>(400_000)
-            GZIPInputStream(gzipped).bufferedReader(Charsets.UTF_8).useLines { lines ->
-                for (line in lines) {
-                    if (line.isEmpty() || line.startsWith("#")) continue
-                    if (line.startsWith("C\t")) {
-                        labels = line.substring(2).split('\t').toTypedArray()
-                        continue
-                    }
-                    val parts = line.split('\t')
-                    if (parts.size != 3 || parts[0] != "F") continue
-                    val pairs = parts[2].split(',')
-                    val arr = IntArray(pairs.size * 2)
-                    pairs.forEachIndexed { k, p ->
-                        arr[2 * k] = p.substringBefore(':').toInt()
-                        arr[2 * k + 1] = p.substringAfter(':').toInt()
-                    }
-                    weights[parts[1]] = arr
-                }
-            }
-            return WordGuesser(labels, weights)
-        }
+        /** Reads the packed model (see tools/perceptron_pack.py). */
+        fun load(gzipped: InputStream): WordGuesser = WordGuesser(PackedPerceptron.load(gzipped))
     }
 }

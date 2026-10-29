@@ -44,6 +44,7 @@ class DistilleryTtsService : TextToSpeechService() {
     }
 
     private fun warmUp(voice: KokoroVoice) {
+        if (runtime.synth.isWarm(voice)) return
         synthesis.execute {
             try {
                 runtime.synth.warmUp(voice)
@@ -54,8 +55,9 @@ class DistilleryTtsService : TextToSpeechService() {
     }
 
     override fun onDestroy() {
+        // Android stops this service whenever no app is connected; the next app
+        // usually comes soon, so the voice stays loaded until the idle timer frees it.
         TtsLog.add("Engine service stopped")
-        runtime.synth.unloadNow()
         super.onDestroy()
     }
 
@@ -75,6 +77,8 @@ class DistilleryTtsService : TextToSpeechService() {
 
     override fun onLoadLanguage(lang: String?, country: String?, variant: String?): Int {
         val result = onIsLanguageAvailable(lang, country, variant)
+        // Apps load a language when they connect, before they speak: load now.
+        if (result >= TextToSpeech.LANG_AVAILABLE) defaultVoice(Accent.fromCountry(country))?.let(::warmUp)
         if (result >= TextToSpeech.LANG_AVAILABLE) {
             currentAccent = Accent.fromCountry(country)?.takeIf { result == TextToSpeech.LANG_COUNTRY_AVAILABLE }
                 ?: defaultVoice(null)?.accent
@@ -118,7 +122,7 @@ class DistilleryTtsService : TextToSpeechService() {
 
     override fun onGetDefaultVoiceNameFor(lang: String?, country: String?, variant: String?): String? {
         if (!isEnglish(lang)) return null
-        return defaultVoice(Accent.fromCountry(country))?.voiceName
+        return defaultVoice(Accent.fromCountry(country))?.also(::warmUp)?.voiceName
     }
 
     // -------------------------------------------------------------- speaking

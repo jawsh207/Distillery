@@ -11,7 +11,8 @@ Letter-to-sound in two steps, all in plain Python:
 2. Classification. An averaged perceptron predicts each letter's phonemes,
    left to right, from the letters around it and the phonemes it just chose.
 
-The result is written to app/src/debug/assets/tts/guesser-<accent>.tsv.gzip.
+The result is written, packed (perceptron_pack.py), to
+app/src/debug/assets/tts/guesser-<accent>.bin.gzip.
 WordGuesser.kt reads it and must compute exactly the same features as
 `features()` here.
 
@@ -294,13 +295,10 @@ def main():
         total += len(units(truth))
     print(f"held-out words: {right / len(test):.3f} exactly right, phoneme error rate {errs / total:.3f}")
 
-    out = Path(__file__).resolve().parent.parent / f"app/src/debug/assets/tts/guesser-{accent}.tsv.gzip"
-    lines = [f"# Distillery word guesser ({accent}): averaged perceptron trained on misaki's lexicon (Apache-2.0).",
-             "C\t" + "\t".join(classes)]
-    for f in sorted(model.w):
-        lines.append("F\t" + f + "\t" + ",".join(f"{c}:{v}" for c, v in sorted(model.w[f].items())))
-    with open(out, "wb") as raw, gzip.GzipFile(fileobj=raw, mode="wb", mtime=0, filename="") as gz:
-        gz.write(("\n".join(lines) + "\n").encode("utf-8"))
+    out = Path(__file__).resolve().parent.parent / f"app/src/debug/assets/tts/guesser-{accent}.bin.gzip"
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from perceptron_pack import pack
+    pack(classes, {}, model.w, out)
     print(f"{out.name}: {len(classes)} labels, {len(model.w)} features, {out.stat().st_size // 1024} KB")
 
 
