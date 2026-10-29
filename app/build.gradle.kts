@@ -89,13 +89,13 @@ android {
     }
 }
 
-// Dev builds: the full ONNX Runtime.
+// The full ONNX Runtime.
 //
 // Moonshine's AAR ships an ONNX Runtime cut down to the operators of its own
-// models, and the 0.1.5 build lacks kernels the text-to-speech models now on
-// its CDN need (QLinearMatMul). Dev builds, which carry text to speech, replace
-// it with the stock ONNX Runtime Android library of the same version, which has
-// every operator. Release builds keep Moonshine's own library unchanged.
+// models, and the 0.1.5 build lacks kernels the Kokoro text-to-speech models
+// need (QLinearMatMul). Every build replaces it with the stock ONNX Runtime
+// Android library of the same version, which has every operator; speech
+// recognition runs on it unchanged.
 val stockOrt: Configuration by configurations.creating {
     isTransitive = false
     isCanBeConsumed = false
@@ -127,10 +127,10 @@ val extractStockOrt = tasks.register<ExtractStockOrt>("extractStockOrt") {
 }
 
 androidComponents {
-    onVariants(selector().withBuildType("debug")) { variant ->
+    onVariants { variant ->
         variant.sources.jniLibs?.addGeneratedSourceDirectory(extractStockOrt, ExtractStockOrt::outputDir)
         // The app's own copy is picked over the one inside Moonshine's AAR;
-        // CI checks the dev APK really carries the stock library.
+        // CI checks the APKs really carry the stock library.
         variant.packaging.jniLibs.pickFirsts.add("**/libonnxruntime.so")
     }
 }

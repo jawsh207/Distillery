@@ -189,8 +189,8 @@ class KokoroSynth(
             .language(TtsLicensePolicy.LANGUAGE)
             .voice(voice.moonshineId)
             .modelsFrom(store.root)
-            // Dev builds: have the native library log its calls, so a failure
-            // shows up with its reason in the engine log below.
+            // Have the native library log its calls, so a failure shows up
+            // with its reason in the engine log.
             .options(listOf(TranscriberOption("log_api_calls", "true")))
         try {
             tts.load()

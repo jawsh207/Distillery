@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Trains the dev build's English part-of-speech tagger.
+"""Trains Distillery's English part-of-speech tagger.
 
 An averaged perceptron (Collins 2002; the feature set follows Matthew
 Honnibal's well-known 2013 write-up), trained on the Universal Dependencies
 English Web Treebank (CC BY-SA 4.0), predicting its Penn Treebank tags
 (XPOS) — the tags misaki's lexicon keys its heteronyms by. The model is
-written as app/src/debug/assets/tts/pos-tagger.bin.gzip and so is itself
+written as app/src/main/assets/tts/pos-tagger.bin.gzip and so is itself
 CC BY-SA 4.0. The Kotlin side (PosTagger.kt) must compute exactly the same
 features as `features()` here.
 
@@ -186,7 +186,7 @@ def main():
 
     classes = sorted(model.classes)
     index = {c: i for i, c in enumerate(classes)}
-    out = Path(__file__).resolve().parent.parent / "app/src/debug/assets/tts/pos-tagger.bin.gzip"
+    out = Path(__file__).resolve().parent.parent / "app/src/main/assets/tts/pos-tagger.bin.gzip"
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from perceptron_pack import pack
     weights = {f: {index[c]: round(w * SCALE) for c, w in ws.items()} for f, ws in model.weights.items()}

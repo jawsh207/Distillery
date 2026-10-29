@@ -20,24 +20,24 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: standin
-          path: app/src/debug/assets/tts/standin/
+          path: app/src/main/assets/tts/standin/
           run-id: ${{ inputs.run_id }}
           github-token: ${{ github.token }}
       - uses: actions/download-artifact@v4
         with:
           pattern: guesser-*
-          path: app/src/debug/assets/tts/
+          path: app/src/main/assets/tts/
           merge-multiple: true
           run-id: ${{ inputs.run_id }}
           github-token: ${{ github.token }}
       - name: Commit
         run: |
           set -x
-          ls -laR app/src/debug/assets/tts > files.txt 2>&1
+          ls -laR app/src/main/assets/tts > files.txt 2>&1
           echo "::notice title=Files::$(tr '\n' '|' < files.txt)"
           git config user.name jawsh207
           git config user.email jawsh@tuta.com
-          git add app/src/debug/assets/tts
+          git add app/src/main/assets/tts
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi
-          git commit -m "Dev builds: add the trained word guessers" > out.txt 2>&1 || { echo "::error title=commit::$(tr '\n' '|' < out.txt)"; exit 1; }
+          git commit -m "Text to speech: add the trained word guessers" > out.txt 2>&1 || { echo "::error title=commit::$(tr '\n' '|' < out.txt)"; exit 1; }
           git push > out.txt 2>&1 || { echo "::error title=push::$(tr '\n' '|' < out.txt)"; exit 1; }

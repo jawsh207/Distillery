@@ -1,7 +1,7 @@
-Distillery is a speech-to-text engine for Android. It plugs into Android's standard speech recognition service, so any app that offers voice input can use it: keyboards and apps get live dictation with no popup and no app switch, and apps can hand it audio recordings to transcribe.
+Distillery is a speech-to-text and text-to-speech engine for Android. It plugs into Android's standard speech recognition service, so any app that offers voice input can use it: keyboards and apps get live dictation with no popup and no app switch, and apps can hand it audio recordings to transcribe. It is also a system text-to-speech engine, so apps that read text aloud can use its natural-sounding voices.
 
 <b>Private by design</b>
-Speech is recognized entirely on your phone with Moonshine, an open-source speech model built for live speech. Distillery never sends audio anywhere and needs no account. The only network use is the one-time download of a speech model you choose.
+Speech is recognized entirely on your phone with Moonshine, an open-source speech model built for live speech, and spoken with Kokoro, an open-source voice model. Distillery never sends audio or text anywhere and needs no account. The only network use is the one-time download of the speech model and voices you choose.
 
 <b>Features</b>
 <ul>
@@ -11,10 +11,13 @@ Speech is recognized entirely on your phone with Moonshine, an open-source speec
 <li>Transcribes recordings other apps hand over: AMR, M4A/3GP, MP3, Ogg, FLAC, WAV</li>
 <li>Choose Tiny, Small or Medium to trade speed for accuracy</li>
 <li>Material 3 Expressive design that follows your wallpaper colors</li>
-<li>Built-in test bench for dictation and recordings</li>
+<li>Text to speech with 28 American and British English voices</li>
+<li>Reads numbers, dates, money and abbreviations the way people say them</li>
+<li>Add your own pronunciations for names and places</li>
+<li>Built-in test bench for dictation, recordings and speech</li>
 </ul>
 
 <b>Open source</b>
-Distillery is licensed under the GPL-3.0. Moonshine and the English streaming models are MIT-licensed. Distillery never downloads models under non-open-source licenses.
+Distillery is licensed under the GPL-3.0. Moonshine and the English streaming models are MIT-licensed; Kokoro and its voices are Apache-2.0. Distillery never downloads models under non-open-source licenses.
 
 Requires Android 16. English only for now.

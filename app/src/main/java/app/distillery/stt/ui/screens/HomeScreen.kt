@@ -189,7 +189,7 @@ fun HomeScreen(
             DefaultVoiceInputCard(isDefault = isDefault, context = context)
         }
 
-        // ------------------------------------- text to speech (dev builds only)
+        // ------------------------------------------------------ text to speech
         with(TtsFeature) { homeItems(onNavigate) }
 
         // ------------------------------------------------------------ dictation

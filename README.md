@@ -10,13 +10,13 @@ that uses Android's `SpeechRecognizer` can use it: keyboards and apps get live d
 background with no popup or app switch, and apps can hand it an audio recording to transcribe.
 
 It is also a system **text-to-speech engine** (`android.speech.tts.TextToSpeechService`) with
-English Kokoro voices, for any app that reads text aloud. Text to speech is in dev builds while
-it's being tested; see [Text to speech](#text-to-speech-dev-builds-only).
+English Kokoro voices, for any app that reads text aloud; see [Text to speech](#text-to-speech).
 
 - Fully on device: no network during recognition, no Google services, no account.
 - Live dictation with partial results while you speak, and automatic stop after a pause.
 - Recording transcription: AMR, AAC/M4A/3GP, MP3, Ogg Opus/Vorbis, FLAC, WAV or raw PCM.
 - Moonshine English streaming models: **Tiny**, **Small** (default) or **Medium**.
+- Text to speech with 28 English Kokoro voices, read aloud on the phone, for any app.
 - Material 3 Expressive UI with the system's dynamic colors.
 - Android 16+ (minSdk 36), Kotlin, Jetpack Compose. Package `app.distillery.stt`.
 - GPL-3.0-or-later. Every dependency and model is OSI-licensed; all licenses are shown in the app.
@@ -189,10 +189,11 @@ explicit allowlist, and `ModelLicensePolicy` rejects any download manifest that 
 Models aren't bundled. The app downloads the one you pick (Wi-Fi only by default) into
 `noBackupFilesDir`, using Moonshine's resumable downloader. Network access exists only for this.
 
-## Text to speech (dev builds only)
+## Text to speech
 
-Dev (debug) builds also contain an English text-to-speech engine, built on
-Moonshine's synthesizer with the Kokoro-82M voices (Apache-2.0). Pick a voice
+Distillery is also an English text-to-speech engine, built on Moonshine's
+synthesizer with the Kokoro-82M voices (Apache-2.0), 28 American and British
+voices downloaded on request. Pick a voice
 under Voices, then choose Distillery as the preferred engine in
 Settings › Accessibility › Text-to-speech output (or System › Languages ›
 Text-to-speech output, depending on the phone).
@@ -204,7 +205,7 @@ those lexicons by `tools/train-word-guesser.py`. Words with several readings ("r
 "record", "present") are told apart by a small part-of-speech tagger trained
 by `tools/train-pos-tagger.py` on the Universal Dependencies English Web
 Treebank; the model is CC BY-SA 4.0. Built-in fixes live in
-`app/src/debug/assets/tts/pronunciations.tsv`, and users can add their own under
+`app/src/main/assets/tts/pronunciations.tsv`, and users can add their own under
 Voices › Pronunciations.
 
 None of Moonshine's English pronunciation data is used: Moonshine hasn't
@@ -212,9 +213,10 @@ stated its license. Moonshine's engine needs files at those paths to start, so
 Distillery puts small stand-ins there (`tools/make-g2p-standin.py`) and never
 downloads the originals. Everything text to speech uses is open source.
 
-It isn't in releases yet. Voice cloning isn't offered: the cloning model was
-trained on non-commercial data. CI checks that release APKs contain no text to
-speech.
+Voice cloning isn't offered: the cloning model was trained on non-commercial
+data, and `TtsLicensePolicy` refuses its files. Kokoro needs operators that
+Moonshine's cut-down ONNX Runtime lacks, so Distillery packages the full ONNX
+Runtime of the same version.
 
 ## Building
 

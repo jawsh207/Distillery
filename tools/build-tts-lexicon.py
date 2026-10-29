@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Builds the dev build's English pronunciation lexicons from misaki.
+"""Builds Distillery's English pronunciation lexicons from misaki.
 
 misaki (github.com/hexgrad/misaki, Apache-2.0) is the G2P that Kokoro was
 trained with; its gold and silver dictionaries are written in Kokoro's own
 phoneme set. This flattens them to word<TAB>phonemes, gold over silver, taking
 each word's DEFAULT reading where misaki has several by part of speech, and
-gzips them into app/src/debug/assets/tts/. Words with several readings
+gzips them into app/src/main/assets/tts/. Words with several readings
 ("read", "lead", "record") also go to heteronyms-<accent>.tsv.gzip as
 word<TAB>TAG=phonemes;TAG=phonemes, for the part-of-speech tagger to choose from.
 
@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 misaki = Path(sys.argv[1])
-out_dir = Path(__file__).resolve().parent.parent / "app/src/debug/assets/tts"
+out_dir = Path(__file__).resolve().parent.parent / "app/src/main/assets/tts"
 out_dir.mkdir(parents=True, exist_ok=True)
 
 for accent in ("us", "gb"):

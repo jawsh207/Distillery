@@ -25,7 +25,7 @@ from pathlib import Path
 import onnx
 from onnx import TensorProto, helper
 
-out = Path(__file__).resolve().parent.parent / "app/src/debug/assets/tts/standin"
+out = Path(__file__).resolve().parent.parent / "app/src/main/assets/tts/standin"
 out.mkdir(parents=True, exist_ok=True)
 
 (out / "dict.tsv").write_text("distillery\tdɪstˈɪləɹi\n", encoding="utf-8")

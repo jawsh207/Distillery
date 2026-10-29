@@ -70,10 +70,7 @@ fun VoicesScreen(onBack: () -> Unit, onOpenPronunciations: () -> Unit = {}) {
         runtime.downloads.start(voice)
     }
 
-    DistilleryScreen(title = "Voices", subtitle = "Text to speech · English · dev build", onBack = onBack) {
-        item {
-            DevNoticeCard()
-        }
+    DistilleryScreen(title = "Voices", subtitle = "Text to speech · English", onBack = onBack) {
         item {
             OutlinedButton(onClick = onOpenPronunciations, shapes = ButtonDefaults.shapes()) {
                 Text("Pronunciations")
@@ -233,26 +230,6 @@ private fun VoiceCard(
                     }
                 }
             }
-        }
-    }
-}
-
-/** States plainly why text to speech is only in dev builds. */
-@Composable
-fun DevNoticeCard() {
-    Card(
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        ),
-    ) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Dev builds only", style = MaterialTheme.typography.titleMedium)
-            BodyText(
-                "Text to speech is still being tested, so it's only in dev builds. Everything it uses is open source: " +
-                    "Kokoro's voices, misaki's dictionaries and Distillery's own tagger and word guesser.",
-            )
         }
     }
 }

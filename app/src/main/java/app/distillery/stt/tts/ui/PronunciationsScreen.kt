@@ -62,7 +62,7 @@ fun PronunciationsScreen(onBack: () -> Unit) {
         if (voice != null) speaker.speak(w, voice, 1f)
     }
 
-    DistilleryScreen(title = "Pronunciations", subtitle = "Text to speech · dev build", onBack = onBack) {
+    DistilleryScreen(title = "Pronunciations", subtitle = "Text to speech", onBack = onBack) {
         item {
             BodyText(
                 "If a word is said wrong, spell how it sounds using ordinary words, with the stressed part in capitals: " +

@@ -6,10 +6,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
-/** Uses the real models from the dev build's assets. */
+/** Uses the real models from the app's assets. */
 class WordGuesserTest {
 
-    private val us by lazy { File("src/debug/assets/tts/guesser-us.bin.gzip").inputStream().use { WordGuesser.load(it) } }
+    private val us by lazy { File("src/main/assets/tts/guesser-us.bin.gzip").inputStream().use { WordGuesser.load(it) } }
 
     @Test fun oneMainStress() {
         assertEquals("bˈæŋɡˌɔɹ", WordGuesser.fixStress("bˈæŋɡˈɔɹ"))

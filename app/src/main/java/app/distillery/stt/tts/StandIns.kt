@@ -29,7 +29,7 @@ object StandIns {
 
     /**
      * Puts the stand-ins in place under [root], replacing anything else there
-     * (such as Moonshine's own files from an earlier dev build).
+     * (such as Moonshine's own files from an earlier version).
      *
      * @return the number of files written.
      */

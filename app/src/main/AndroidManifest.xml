@@ -6,8 +6,9 @@
          service never uses the network. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
-    <!-- Network is used for exactly one thing: downloading a speech model
-         the user picked on the Models screen. -->
+    <!-- Network is used for exactly one thing: downloading a speech model or
+         voice the user picked on the Models or Voices screen. Recognition and
+         speech themselves never use it. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -18,10 +19,14 @@
         android:name="android.hardware.microphone"
         android:required="true" />
 
-    <!-- Lets the test screen see recognition services (package visibility). -->
+    <!-- Lets the test screen see recognition services and text-to-speech
+         engines (package visibility). -->
     <queries>
         <intent>
             <action android:name="android.speech.RecognitionService" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
         </intent>
     </queries>
 
@@ -66,7 +71,39 @@
                 android:resource="@xml/recognition_service" />
         </service>
 
-        <!-- Model downloads run as WorkManager foreground work. -->
+        <!-- The system text-to-speech engine. Chosen in Settings as the
+             preferred engine; apps reach it through android.speech.tts. -->
+        <service
+            android:name=".tts.DistilleryTtsService"
+            android:exported="true"
+            android:label="@string/tts_service_label">
+            <intent-filter>
+                <action android:name="android.intent.action.TTS_SERVICE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.speech.tts"
+                android:resource="@xml/tts_engine" />
+        </service>
+
+        <!-- Voice data checks Settings and apps make against the engine. -->
+        <activity
+            android:name=".tts.VoiceDataActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.speech.tts.engine.CHECK_TTS_DATA" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.speech.tts.engine.INSTALL_TTS_DATA" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- Model and voice downloads run as WorkManager foreground work. -->
         <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"
             android:foregroundServiceType="dataSync"

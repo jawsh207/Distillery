@@ -262,7 +262,7 @@ fun TestScreen(onBack: () -> Unit, onOpenModels: () -> Unit, onNavigate: (String
             }
         }
 
-        // Text to speech test (dev builds only).
+        // Text to speech test.
         with(TtsFeature) { testItems(onNavigate) }
 
         item {

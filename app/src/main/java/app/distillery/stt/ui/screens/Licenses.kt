@@ -54,7 +54,7 @@ object OssLicenses {
                     "MIT", "MIT-moonshine.txt",
                 ),
                 OssComponent(
-                    "onnxruntime", "ONNX Runtime 1.23.2 (minimal build)", "Microsoft Corporation",
+                    "onnxruntime", "ONNX Runtime 1.23.2", "Microsoft Corporation · full build, which Kokoro needs",
                     "MIT", "MIT-onnxruntime.txt",
                 ),
                 OssComponent(
@@ -119,7 +119,7 @@ object OssLicenses {
         ),
     )
 
-    /** Dev builds add the text-to-speech components; release builds don't ship them. */
+    /** Speech recognition and its parts, then text to speech and its parts. */
     val groups: List<OssGroup> = core + TtsFeature.licenseGroups
 
     fun find(id: String): OssComponent? = groups.flatMap { it.components }.firstOrNull { it.id == id }

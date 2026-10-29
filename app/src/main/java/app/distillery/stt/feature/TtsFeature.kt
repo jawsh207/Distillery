@@ -70,10 +70,8 @@ import app.distillery.stt.ui.screens.OssGroup
 import java.util.Locale
 
 /**
- * Text to speech, dev (debug) builds only.
- *
- * Release builds get a stub with the same shape (src/release), so none of this
- * code, nor the engine's manifest entries, ships in a release.
+ * Text to speech: its screens, cards and license entries, kept together so the
+ * rest of the UI only needs these few hooks.
  */
 object TtsFeature {
     const val ENABLED = true
@@ -82,15 +80,11 @@ object TtsFeature {
 
     val licenseGroups: List<OssGroup> = listOf(
         OssGroup(
-            "Text to speech (dev builds only, downloaded on request)",
+            "Text to speech (voices downloaded on request)",
             listOf(
                 OssComponent(
                     "kokoro", "Kokoro-82M and its English voices", "hexgrad",
                     "Apache-2.0", "Apache-2.0.txt",
-                ),
-                OssComponent(
-                    "onnxruntime-full", "ONNX Runtime 1.23.2 (full build)", "Microsoft Corporation · replaces the minimal build in dev builds",
-                    "MIT", "MIT-onnxruntime.txt",
                 ),
                 OssComponent(
                     "misaki", "misaki English lexicons", "hexgrad · Kokoro's own pronunciation dictionaries",
@@ -148,13 +142,13 @@ private fun HomeCard(onOpenVoices: () -> Unit) {
     val ready = installed.isNotEmpty() && isDefaultEngine
 
     SectionCard(
-        title = "Text to speech (dev)",
+        title = "Text to speech",
         icon = R.drawable.ic_volume_up,
         tone = if (ready) Tone.Good else Tone.Neutral,
     ) {
         BodyText(
             when {
-                installed.isEmpty() -> "Download an English voice to try Distillery as your phone's text-to-speech engine. Dev builds only, for now."
+                installed.isEmpty() -> "Download an English voice to use Distillery as your phone's text-to-speech engine. Speech is made on your phone."
                 isDefaultEngine -> "Distillery reads text aloud for apps, with the ${defaultVoice.displayName} voice. ${installed.size} voice${if (installed.size == 1) "" else "s"} downloaded."
                 else -> "${installed.size} voice${if (installed.size == 1) "" else "s"} downloaded. To use Distillery everywhere:"
             },
@@ -243,7 +237,7 @@ private fun ListenCard(onOpenVoices: () -> Unit, onOpenPronunciations: () -> Uni
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Text to speech (dev)", style = MaterialTheme.typography.titleLarge)
+            Text("Text to speech", style = MaterialTheme.typography.titleLarge)
             BodyText("Speaks through android.speech.tts with Distillery as the engine, the way other apps call it.")
             if (installed.isEmpty()) {
                 BodyText("No voice downloaded yet.")

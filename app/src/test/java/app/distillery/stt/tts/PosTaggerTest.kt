@@ -6,10 +6,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
-/** Uses the real model and lexicon from the dev build's assets. */
+/** Uses the real model and lexicon from the app's assets. */
 class PosTaggerTest {
 
-    private val assets = File("src/debug/assets/tts")
+    private val assets = File("src/main/assets/tts")
     private val tagger by lazy { File(assets, "pos-tagger.bin.gzip").inputStream().use { PosTagger.load(it) } }
     private val pronouncer by lazy {
         val heteronyms = File(assets, "heteronyms-us.tsv.gzip").inputStream().use { Lexicon.loadHeteronyms(it) }

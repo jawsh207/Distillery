@@ -37,7 +37,7 @@ jobs:
           mkdir -p dex && unzip -q -o "$APK" 'classes*.dex' -d dex
           for d in dex/*.dex; do "$DEXDUMP" "$d"; done > dex.txt
           missing=""
-          for cls in androidx/work/impl/WorkDatabase_Impl app/distillery/stt/engine/ModelDownloadWorker; do
+          for cls in androidx/work/impl/WorkDatabase_Impl app/distillery/stt/engine/ModelDownloadWorker app/distillery/stt/tts/VoiceDownloadWorker; do
             awk -v c="L$cls;" '
               $0 ~ "Class descriptor" && index($0, c) {inside=1; next}
               $0 ~ "Class descriptor" {inside=0}
@@ -49,45 +49,34 @@ jobs:
           fi
           echo "Reflection targets kept."
 
-      - name: Check text to speech stays out of releases
+      - name: Check text to speech is in both builds
         run: |
-          # Text to speech is dev-only until every file it downloads has a
-          # confirmed open-source license. The release APK must not contain
-          # the engine's classes, manifest entries or license notes.
           APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
-          AAPT2=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)aapt2
-          found=""
-          grep -q 'Lapp/distillery/stt/tts/' dex.txt && found="$found classes"
-          "$AAPT2" dump xmltree --file AndroidManifest.xml "$APK" | grep -q 'TTS_SERVICE\|CHECK_TTS_DATA' && found="$found manifest"
-          unzip -l "$APK" | grep -q 'assets/tts/\|tts_engine' && found="$found files"
-          if [ -n "$found" ]; then
-            echo "::error title=Text to speech in release::The release APK contains text-to-speech parts:$found"; exit 1
-          fi
-          # And the dev build must have it, so the check above means something.
           DEBUG_APK=$(ls app/build/outputs/apk/debug/*.apk | head -1)
-          "$AAPT2" dump xmltree --file AndroidManifest.xml "$DEBUG_APK" | grep -q 'TTS_SERVICE' \
-            || { echo "::error title=Dev build::The dev build has no text-to-speech engine"; exit 1; }
-          # The dev build must carry the stock ONNX Runtime (the TTS models
-          # need operators Moonshine's cut-down build lacks); the release keeps
-          # Moonshine's own. Packaging may strip the libraries, so compare the
-          # two APKs with each other rather than with the downloaded file.
-          dev_ort=$(unzip -p "$DEBUG_APK" lib/arm64-v8a/libonnxruntime.so | wc -c)
-          rel_ort=$(unzip -p "$APK" lib/arm64-v8a/libonnxruntime.so | wc -c)
-          echo "ONNX Runtime: dev $dev_ort bytes, release $rel_ort bytes"
-          [ "$dev_ort" -gt $((rel_ort + 2000000)) ] \
-            || { echo "::error title=Dev build::The dev APK doesn't carry the full ONNX Runtime (dev $dev_ort, release $rel_ort bytes)"; exit 1; }
-          # The dev build's pronunciation data must be in the APK under the names
-          # the code opens (the build renames *.gz assets, which once broke this).
-          for f in lexicon-us.tsv.gzip lexicon-gb.tsv.gzip heteronyms-us.tsv.gzip heteronyms-gb.tsv.gzip pos-tagger.bin.gzip guesser-us.bin.gzip guesser-gb.bin.gzip pronunciations.tsv standin/dict.tsv standin/g2p-config.json standin/model.ort standin/onnx-config.json; do
-            unzip -l "$DEBUG_APK" | grep -q "assets/tts/$f\$" \
-              || { echo "::error title=Dev build::assets/tts/$f is missing from the dev APK"; exit 1; }
+          AAPT2=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)aapt2
+          for apk in "$APK" "$DEBUG_APK"; do
+            name=$(basename "$apk")
+            "$AAPT2" dump xmltree --file AndroidManifest.xml "$apk" | grep -q 'TTS_SERVICE' \
+              || { echo "::error title=$name::No text-to-speech engine in the manifest"; exit 1; }
+            # Pronunciation data must be in the APK under the names the code
+            # opens (the build renames *.gz assets, which once broke this).
+            for f in lexicon-us.tsv.gzip lexicon-gb.tsv.gzip heteronyms-us.tsv.gzip heteronyms-gb.tsv.gzip pos-tagger.bin.gzip guesser-us.bin.gzip guesser-gb.bin.gzip pronunciations.tsv standin/dict.tsv standin/g2p-config.json standin/model.ort standin/onnx-config.json; do
+              unzip -l "$apk" | grep -q "assets/tts/$f\$" \
+                || { echo "::error title=$name::assets/tts/$f is missing"; exit 1; }
+            done
+            # Kokoro needs the full ONNX Runtime (about 18 MB for arm64), not
+            # Moonshine's cut-down one (about 6 MB).
+            ort=$(unzip -p "$apk" lib/arm64-v8a/libonnxruntime.so | wc -c)
+            echo "$name: ONNX Runtime $ort bytes"
+            [ "$ort" -gt 12000000 ] \
+              || { echo "::error title=$name::Not the full ONNX Runtime ($ort bytes)"; exit 1; }
           done
           # Releases are arm64-v8a only; dev builds also carry x86_64 for the emulator.
           unzip -l "$APK" | grep -q 'lib/x86_64/' \
             && { echo "::error title=Release build::The release APK contains x86_64 libraries"; exit 1; }
           unzip -l "$APK" | grep -q 'lib/arm64-v8a/' \
             || { echo "::error title=Release build::The release APK has no arm64-v8a libraries"; exit 1; }
-          echo "Release has no text to speech; dev build has it, with the full ONNX Runtime."
+          echo "Both builds have text to speech and the full ONNX Runtime."
 
       - name: Report build errors
         if: failure()

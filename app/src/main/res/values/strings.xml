@@ -2,9 +2,10 @@
 <resources>
     <string name="app_name">Distillery</string>
     <string name="recognition_service_label">Distillery (Moonshine, on-device)</string>
+    <string name="tts_service_label">Distillery (Kokoro, on-device)</string>
 
-    <string name="channel_downloads">Model downloads</string>
-    <string name="channel_downloads_description">Progress while a speech model downloads</string>
+    <string name="channel_downloads">Downloads</string>
+    <string name="channel_downloads_description">Progress while a speech model or voice downloads</string>
     <string name="channel_attention">Needs attention</string>
     <string name="channel_attention_description">Shown when voice input can\'t start, for example without microphone access</string>
 
