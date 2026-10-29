@@ -1,0 +1,6 @@
+New: text to speech. Distillery is now also a system text-to-speech engine, with 28 American and British English Kokoro voices that run on your phone.
+- Choose and download voices under Voices, then pick Distillery as the preferred engine in Android's text-to-speech settings.
+- Reads numbers, money, dates, times, units and abbreviations the way people say them.
+- Pronunciation from Kokoro's own dictionaries, with a grammar tagger for words like "read" and "record", and a guesser for names.
+- Add your own pronunciations under Voices › Pronunciations.
+- Try it on the Test screen, which also shows an engine log.
