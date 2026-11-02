@@ -1,0 +1,5 @@
+A new layout: three tabs for Speech to text, Text to speech and Downloads.
+- Downloads keeps speech models and voices in one place, with the space they use and one Wi-Fi only setting.
+- Dictation: a Punctuation switch, and no final period for searches and voice commands.
+- Offensive words are masked (f***) as Android recommends, with a switch to turn it off. Apps can still ask either way.
+- Apps that ask for formatting get both the formatted and the plain text.
