@@ -48,6 +48,8 @@ internal class RecognitionSession(
     private val request: RecognitionRequest,
     private val model: SttModel,
     private val engine: SpeechEngine,
+    /** Loaded only when a request masks offensive words. */
+    private val offensiveWords: () -> OffensiveWords,
     private val openInput: () -> AudioInput,
     private val onFinished: (RecognitionSession) -> Unit,
 ) {
@@ -275,8 +277,16 @@ internal class RecognitionSession(
 
     // ------------------------------------------------------------ callbacks
 
+    /**
+     * The result list for [text]: masked if the request says so, and, when the
+     * app asked for formatting, followed by the raw (unpunctuated, lower-case)
+     * text, as Android specifies for EXTRA_ENABLE_FORMATTING.
+     */
     private fun resultsBundle(text: String) = Bundle().apply {
-        putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION, arrayListOf(text))
+        val shown = if (request.maskOffensive) offensiveWords().mask(text) else text
+        val list = arrayListOf(shown)
+        if (request.formatting) list += Punctuation.stripAll(shown).lowercase()
+        putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION, list)
     }
 
     /** Sends a non-terminal callback unless the session is over. */

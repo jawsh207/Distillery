@@ -45,6 +45,7 @@ class RecognizerTester(private val context: Context) {
     var partialResults by mutableStateOf(true)
     var hidePartialPunctuation by mutableStateOf(false)
     var searchMode by mutableStateOf(false)
+    var formatting by mutableStateOf(false)
 
     val events = mutableStateListOf<TestEvent>()
 
@@ -95,6 +96,7 @@ class RecognizerTester(private val context: Context) {
             if (searchMode) RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH else RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
         )
         .putExtra(RecognizerIntent.EXTRA_HIDE_PARTIAL_TRAILING_PUNCTUATION, hidePartialPunctuation)
+        .apply { if (formatting) putExtra(RecognizerIntent.EXTRA_ENABLE_FORMATTING, RecognizerIntent.FORMATTING_OPTIMIZE_QUALITY) }
         .putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US")
         .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, partialResults)
         .putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.packageName)
@@ -174,6 +176,12 @@ class RecognizerTester(private val context: Context) {
 
     private fun elapsed() = SystemClock.elapsedRealtime() - startedAt
 
+    /** Every hypothesis in a result bundle; with formatting, the second is the raw text. */
+    private fun describe(bundle: Bundle?): String =
+        bundle?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION).orEmpty()
+            .mapIndexed { i, t -> if (i == 0) "“$t”" else "raw: “$t”" }
+            .joinToString("\n")
+
     private fun log(name: String, detail: String = "") {
         events.add(0, TestEvent(elapsed(), name, detail))
         if (events.size > MAX_EVENTS) events.removeAt(events.lastIndex)
@@ -217,7 +225,7 @@ class RecognizerTester(private val context: Context) {
         override fun onResults(results: Bundle?) {
             val text = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
             if (endOfSpeechAt > 0) finalAfterEndMs = SystemClock.elapsedRealtime() - endOfSpeechAt
-            log("onResults", "“$text”")
+            log("onResults", describe(results))
             composing = ""
             commit(text)
             finishSession()
@@ -228,13 +236,13 @@ class RecognizerTester(private val context: Context) {
             val text = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
             partialCount++
             if (firstPartialMs == null) firstPartialMs = elapsed()
-            log("onPartialResults", "“$text”")
+            log("onPartialResults", describe(partialResults))
             composing = text
         }
 
         override fun onSegmentResults(segmentResults: Bundle) {
             val text = segmentResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
-            log("onSegmentResults", "“$text”")
+            log("onSegmentResults", describe(segmentResults))
             commit(text)
         }
 

@@ -100,6 +100,7 @@ class DistilleryRecognitionService : RecognitionService() {
             request = request,
             model = model,
             engine = app.engine,
+            offensiveWords = { app.offensiveWords },
             openInput = openInput,
             onFinished = { finished -> sessions.remove(listener, finished) },
         )

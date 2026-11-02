@@ -150,6 +150,18 @@ fun TestScreen(onBack: () -> Unit, onOpenModels: () -> Unit, onNavigate: (String
                         colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                     )
                     ListItem(
+                        headlineContent = { Text("Ask for formatting") },
+                        supportingContent = { Text("EXTRA_ENABLE_FORMATTING: formatted and raw text") },
+                        trailingContent = {
+                            Switch(
+                                checked = tester.formatting,
+                                onCheckedChange = { tester.formatting = it },
+                                enabled = !tester.listening,
+                            )
+                        },
+                        colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    )
+                    ListItem(
                         headlineContent = { Text("Search or command") },
                         supportingContent = { Text("LANGUAGE_MODEL_WEB_SEARCH: no final period") },
                         trailingContent = {

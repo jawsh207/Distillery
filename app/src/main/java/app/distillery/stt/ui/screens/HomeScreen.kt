@@ -317,6 +317,27 @@ private fun DictationSettingsCard(settings: DistillerySettings) {
                 modifier = Modifier.padding(start = 12.dp),
             )
         }
+        var mask by remember { mutableStateOf(settings.maskOffensiveWords) }
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
+            Column(Modifier.weight(1f)) {
+                Text("Mask offensive words", style = MaterialTheme.typography.titleMedium)
+                BodyText(
+                    if (mask) {
+                        "Shown as f***, as Android recommends, unless an app asks for them in full."
+                    } else {
+                        "Shown in full, unless an app asks for them masked."
+                    },
+                )
+            }
+            Switch(
+                checked = mask,
+                onCheckedChange = {
+                    mask = it
+                    settings.maskOffensiveWords = it
+                },
+                modifier = Modifier.padding(start = 12.dp),
+            )
+        }
     }
 }
 

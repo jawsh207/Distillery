@@ -7,6 +7,7 @@ import app.distillery.stt.engine.ModelDownloads
 import app.distillery.stt.engine.ModelStore
 import app.distillery.stt.engine.SpeechEngine
 import app.distillery.stt.engine.DistillerySettings
+import app.distillery.stt.service.OffensiveWords
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -29,6 +30,9 @@ class DistilleryApplication : Application() {
         private set
     lateinit var downloads: ModelDownloads
         private set
+
+    /** The offensive-word list, loaded the first time a result is masked. */
+    val offensiveWords: OffensiveWords by lazy { assets.open(OffensiveWords.ASSET).use { OffensiveWords.load(it) } }
 
     /** True while any model download is queued or running. */
     lateinit var anyDownloadActive: StateFlow<Boolean>

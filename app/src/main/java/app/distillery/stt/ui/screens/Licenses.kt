@@ -88,6 +88,16 @@ object OssLicenses {
             ),
         ),
         OssGroup(
+            "Word lists",
+            listOf(
+                OssComponent(
+                    "ldnoobw", "List of Dirty, Naughty, Obscene, and Otherwise Bad Words (English)",
+                    "Shutterstock and contributors · for masking offensive words",
+                    "CC-BY-4.0", "CC-BY-4.0-ldnoobw.txt",
+                ),
+            ),
+        ),
+        OssGroup(
             "Android libraries",
             listOf(
                 OssComponent(

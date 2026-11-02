@@ -42,6 +42,14 @@ class DistillerySettings(context: Context) {
         get() = prefs.getBoolean(KEY_PUNCTUATION, true)
         set(value) = prefs.edit().putBoolean(KEY_PUNCTUATION, value).apply()
 
+    /**
+     * Mask offensive words when the app doesn't say (Android's documented
+     * default is to mask). An app's own EXTRA_MASK_OFFENSIVE_WORDS wins.
+     */
+    var maskOffensiveWords: Boolean
+        get() = prefs.getBoolean(KEY_MASK_OFFENSIVE, true)
+        set(value) = prefs.edit().putBoolean(KEY_MASK_OFFENSIVE, value).apply()
+
     var wifiOnlyDownloads: Boolean
         get() = prefs.getBoolean(KEY_WIFI_ONLY, true)
         set(value) = prefs.edit().putBoolean(KEY_WIFI_ONLY, value).apply()
@@ -64,6 +72,7 @@ class DistillerySettings(context: Context) {
         private const val KEY_NO_SPEECH_MS = "no_speech_timeout_ms"
         private const val KEY_WIFI_ONLY = "wifi_only_downloads"
         private const val KEY_PUNCTUATION = "punctuation"
+        private const val KEY_MASK_OFFENSIVE = "mask_offensive_words"
 
         const val DEFAULT_PAUSE_MS = 1_000L
         const val MIN_PAUSE_MS = 200L

@@ -39,6 +39,14 @@ internal data class RecognitionRequest(
     val externalAudio: ExternalAudio?,
     /** How punctuation in results is adjusted; see [Punctuation]. */
     val punctuation: Punctuation.Style,
+    /**
+     * The app asked for formatting (EXTRA_ENABLE_FORMATTING): every result
+     * list then holds the formatted text and then the raw text, as Android
+     * specifies.
+     */
+    val formatting: Boolean,
+    /** Mask offensive words (EXTRA_MASK_OFFENSIVE_WORDS; Android's default is on). */
+    val maskOffensive: Boolean,
 ) {
     val isEnglish: Boolean get() = isEnglishTag(language)
 
@@ -102,6 +110,14 @@ internal data class RecognitionRequest(
                     hidePartialTrailing = extras.getBoolean(RecognizerIntent.EXTRA_HIDE_PARTIAL_TRAILING_PUNCTUATION, false),
                     search = extras.getString(RecognizerIntent.EXTRA_LANGUAGE_MODEL) == RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH,
                 ),
+                formatting = extras.getString(RecognizerIntent.EXTRA_ENABLE_FORMATTING) != null,
+                // What the app says wins; when it says nothing, the user's
+                // setting decides, which follows Android's default (on).
+                maskOffensive = if (extras.containsKey(RecognizerIntent.EXTRA_MASK_OFFENSIVE_WORDS)) {
+                    extras.getBoolean(RecognizerIntent.EXTRA_MASK_OFFENSIVE_WORDS, true)
+                } else {
+                    settings.maskOffensiveWords
+                },
             )
         }
 
