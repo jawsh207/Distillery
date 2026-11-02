@@ -34,6 +34,14 @@ class DistillerySettings(context: Context) {
         get() = prefs.getLong(KEY_NO_SPEECH_MS, DEFAULT_NO_SPEECH_MS)
         set(value) = prefs.edit().putLong(KEY_NO_SPEECH_MS, value).apply()
 
+    /**
+     * Keep the punctuation Moonshine adds (the default). Off removes it from
+     * every result, for keyboards that add their own or plain-text use.
+     */
+    var punctuation: Boolean
+        get() = prefs.getBoolean(KEY_PUNCTUATION, true)
+        set(value) = prefs.edit().putBoolean(KEY_PUNCTUATION, value).apply()
+
     var wifiOnlyDownloads: Boolean
         get() = prefs.getBoolean(KEY_WIFI_ONLY, true)
         set(value) = prefs.edit().putBoolean(KEY_WIFI_ONLY, value).apply()
@@ -55,6 +63,7 @@ class DistillerySettings(context: Context) {
         private const val KEY_PAUSE_MS = "pause_to_stop_ms"
         private const val KEY_NO_SPEECH_MS = "no_speech_timeout_ms"
         private const val KEY_WIFI_ONLY = "wifi_only_downloads"
+        private const val KEY_PUNCTUATION = "punctuation"
 
         const val DEFAULT_PAUSE_MS = 1_000L
         const val MIN_PAUSE_MS = 200L

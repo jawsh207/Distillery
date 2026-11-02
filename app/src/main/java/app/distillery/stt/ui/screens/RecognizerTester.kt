@@ -43,6 +43,8 @@ class RecognizerTester(private val context: Context) {
 
     /** Request partial results (as keyboards do). */
     var partialResults by mutableStateOf(true)
+    var hidePartialPunctuation by mutableStateOf(false)
+    var searchMode by mutableStateOf(false)
 
     val events = mutableStateListOf<TestEvent>()
 
@@ -88,7 +90,11 @@ class RecognizerTester(private val context: Context) {
     }
 
     private fun baseIntent() = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-        .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+        .putExtra(
+            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+            if (searchMode) RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH else RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
+        )
+        .putExtra(RecognizerIntent.EXTRA_HIDE_PARTIAL_TRAILING_PUNCTUATION, hidePartialPunctuation)
         .putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US")
         .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, partialResults)
         .putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.packageName)

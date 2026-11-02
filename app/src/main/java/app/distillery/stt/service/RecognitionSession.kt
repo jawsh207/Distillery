@@ -187,12 +187,12 @@ internal class RecognitionSession(
             if (completed) {
                 endpointer.onLineCompleted(line.id)
                 if (request.segmented) {
-                    val text = transcript.textOf(line.id)
+                    val text = request.punctuation.final(transcript.textOf(line.id))
                     if (text.isNotEmpty()) deliver { callback.segmentResults(resultsBundle(text)) }
                 }
             }
             if (request.partialResults && !request.segmented) {
-                val text = transcript.fullText()
+                val text = request.punctuation.partial(transcript.fullText())
                 if (text.isNotEmpty() && text != lastPartial) {
                     lastPartial = text
                     deliver { callback.partialResults(resultsBundle(text)) }
@@ -250,7 +250,7 @@ internal class RecognitionSession(
             // events arrive through the listener before this returns.
             transcriber.stop()
 
-            val text = transcript.fullText()
+            val text = request.punctuation.final(transcript.fullText())
             when {
                 request.segmented -> finish { callback.endOfSegmentedSession() }
                 text.isEmpty() -> fail(SpeechRecognizer.ERROR_NO_MATCH)

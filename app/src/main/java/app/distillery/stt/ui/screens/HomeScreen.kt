@@ -34,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -295,6 +296,27 @@ private fun DictationSettingsCard(settings: DistillerySettings) {
             onValueChangeFinished = { settings.pauseToStopMs = (pause * 1000).toLong() },
             valueRange = DistillerySettings.MIN_PAUSE_MS / 1000f..DistillerySettings.MAX_PAUSE_MS / 1000f,
         )
+        var punctuation by remember { mutableStateOf(settings.punctuation) }
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
+            Column(Modifier.weight(1f)) {
+                Text("Punctuation", style = MaterialTheme.typography.titleMedium)
+                BodyText(
+                    if (punctuation) {
+                        "Added as you speak. Searches and voice commands get theirs without a final period."
+                    } else {
+                        "Off: text comes without punctuation, for keyboards that add their own."
+                    },
+                )
+            }
+            Switch(
+                checked = punctuation,
+                onCheckedChange = {
+                    punctuation = it
+                    settings.punctuation = it
+                },
+                modifier = Modifier.padding(start = 12.dp),
+            )
+        }
     }
 }
 

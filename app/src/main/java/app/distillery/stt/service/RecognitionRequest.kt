@@ -37,6 +37,8 @@ internal data class RecognitionRequest(
     val segmented: Boolean,
     val stopAtMinimumLength: Boolean,
     val externalAudio: ExternalAudio?,
+    /** How punctuation in results is adjusted; see [Punctuation]. */
+    val punctuation: Punctuation.Style,
 ) {
     val isEnglish: Boolean get() = isEnglishTag(language)
 
@@ -95,6 +97,11 @@ internal data class RecognitionRequest(
                 segmented = segmented,
                 stopAtMinimumLength = segmentedBy == RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS,
                 externalAudio = external,
+                punctuation = Punctuation.Style(
+                    off = !settings.punctuation,
+                    hidePartialTrailing = extras.getBoolean(RecognizerIntent.EXTRA_HIDE_PARTIAL_TRAILING_PUNCTUATION, false),
+                    search = extras.getString(RecognizerIntent.EXTRA_LANGUAGE_MODEL) == RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH,
+                ),
             )
         }
 

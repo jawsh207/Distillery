@@ -137,6 +137,30 @@ fun TestScreen(onBack: () -> Unit, onOpenModels: () -> Unit, onNavigate: (String
                         },
                         colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                     )
+                    ListItem(
+                        headlineContent = { Text("Hide trailing punctuation while speaking") },
+                        supportingContent = { Text("EXTRA_HIDE_PARTIAL_TRAILING_PUNCTUATION") },
+                        trailingContent = {
+                            Switch(
+                                checked = tester.hidePartialPunctuation,
+                                onCheckedChange = { tester.hidePartialPunctuation = it },
+                                enabled = !tester.listening && tester.partialResults,
+                            )
+                        },
+                        colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    )
+                    ListItem(
+                        headlineContent = { Text("Search or command") },
+                        supportingContent = { Text("LANGUAGE_MODEL_WEB_SEARCH: no final period") },
+                        trailingContent = {
+                            Switch(
+                                checked = tester.searchMode,
+                                onCheckedChange = { tester.searchMode = it },
+                                enabled = !tester.listening,
+                            )
+                        },
+                        colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    )
                 }
             }
         }
