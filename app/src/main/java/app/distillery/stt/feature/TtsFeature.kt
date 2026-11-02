@@ -35,6 +35,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -61,8 +62,11 @@ import app.distillery.stt.R
 import app.distillery.stt.tts.TtsRuntime
 import app.distillery.stt.tts.ui.EngineSpeaker
 import app.distillery.stt.tts.ui.PronunciationsScreen
-import app.distillery.stt.tts.ui.VoicesScreen
 import app.distillery.stt.ui.components.BodyText
+import app.distillery.stt.ui.components.DistilleryScreen
+import app.distillery.stt.ui.components.LicensesAction
+import app.distillery.stt.ui.components.NavGroup
+import app.distillery.stt.ui.components.NavRow
 import app.distillery.stt.ui.components.SectionCard
 import app.distillery.stt.ui.components.Tone
 import app.distillery.stt.ui.screens.OssComponent
@@ -75,8 +79,10 @@ import java.util.Locale
  */
 object TtsFeature {
     const val ENABLED = true
+    /** Opens the Downloads tab, where the voices are. */
     const val VOICES_ROUTE = "voices"
     const val PRONUNCIATIONS_ROUTE = "pronunciations"
+    const val TEST_ROUTE = "tts-test"
 
     val licenseGroups: List<OssGroup> = listOf(
         OssGroup(
@@ -102,34 +108,34 @@ object TtsFeature {
         ),
     )
 
-    fun handlesRoute(route: String): Boolean = route == VOICES_ROUTE || route == PRONUNCIATIONS_ROUTE
+    /** Routes that open a screen of their own (VOICES_ROUTE opens a tab instead). */
+    fun handlesRoute(route: String): Boolean = route == PRONUNCIATIONS_ROUTE || route == TEST_ROUTE
 
-    fun NavGraphBuilder.destinations(onBack: () -> Unit, onNavigate: (String) -> Unit) {
-        composable(VOICES_ROUTE) {
-            VoicesScreen(onBack = onBack, onOpenPronunciations = { onNavigate(PRONUNCIATIONS_ROUTE) })
-        }
+    fun NavGraphBuilder.destinations(onBack: () -> Unit, onOpenDownloads: () -> Unit, onNavigate: (String) -> Unit) {
         composable(PRONUNCIATIONS_ROUTE) { PronunciationsScreen(onBack = onBack) }
-    }
-
-    fun LazyListScope.homeItems(onNavigate: (String) -> Unit) {
-        item(key = "tts-home") { HomeCard(onOpenVoices = { onNavigate(VOICES_ROUTE) }) }
-    }
-
-    fun LazyListScope.testItems(onNavigate: (String) -> Unit) {
-        item(key = "tts-test") {
-            ListenCard(
-                onOpenVoices = { onNavigate(VOICES_ROUTE) },
-                onOpenPronunciations = { onNavigate(PRONUNCIATIONS_ROUTE) },
-            )
+        composable(TEST_ROUTE) {
+            DistilleryScreen(
+                title = "Test text to speech",
+                subtitle = "android.speech.tts, the way other apps call it",
+                onBack = onBack,
+            ) {
+                item(key = "tts-test") {
+                    ListenCard(
+                        onOpenVoices = onOpenDownloads,
+                        onOpenPronunciations = { onNavigate(PRONUNCIATIONS_ROUTE) },
+                    )
+                }
+            }
         }
     }
 }
 
-// --------------------------------------------------------------------- home
+// ---------------------------------------------------------------------- tab
 
+/** The Text to speech tab: the preferred engine, the default voice, and ways in to the rest. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun HomeCard(onOpenVoices: () -> Unit) {
+fun TextToSpeechTab(onOpenDownloads: () -> Unit, onNavigate: (String) -> Unit, onOpenLicenses: () -> Unit) {
     val context = LocalContext.current
     val runtime = remember { TtsRuntime.get(context) }
     val installed by runtime.store.installed.collectAsStateWithLifecycle()
@@ -139,50 +145,91 @@ private fun HomeCard(onOpenVoices: () -> Unit) {
         isDefaultEngine = isDefaultEngine(context)
         onPauseOrDispose { }
     }
-    val ready = installed.isNotEmpty() && isDefaultEngine
+    val voice = defaultVoice.takeIf { it in installed } ?: installed.firstOrNull()
 
-    SectionCard(
+    DistilleryScreen(
         title = "Text to speech",
-        icon = R.drawable.ic_volume_up,
-        tone = if (ready) Tone.Good else Tone.Neutral,
+        subtitle = "Distillery · Kokoro, on your phone",
+        actions = { LicensesAction(onOpenLicenses) },
     ) {
-        BodyText(
-            when {
-                installed.isEmpty() -> "Download an English voice to use Distillery as your phone's text-to-speech engine. Speech is made on your phone."
-                isDefaultEngine -> "Distillery reads text aloud for apps, with the ${defaultVoice.displayName} voice. ${installed.size} voice${if (installed.size == 1) "" else "s"} downloaded."
-                else -> "${installed.size} voice${if (installed.size == 1) "" else "s"} downloaded. To use Distillery everywhere:"
-            },
-        )
-        if (installed.isNotEmpty() && !isDefaultEngine) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf(
-                    "Tap Open text-to-speech settings.",
-                    "Tap Preferred engine and choose “Distillery (Kokoro, on-device)”.",
-                    "Come back here; this card shows a check.",
-                ).forEachIndexed { i, step ->
-                    Row {
-                        Text("${i + 1}", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(end = 10.dp, top = 2.dp))
-                        BodyText(step)
-                    }
+        // --------------------------------------------------------------- voice
+        item(key = "tts-voice") {
+            SectionCard(
+                title = "Voice",
+                icon = R.drawable.ic_volume_up,
+                tone = if (voice != null) Tone.Good else Tone.Action,
+            ) {
+                if (voice != null) {
+                    BodyText(
+                        "Apps that don't choose a voice get ${voice.displayName} (${voice.accent.label}, " +
+                            "${voice.gender.label.lowercase(Locale.US)}). " +
+                            "${installed.size} voice${if (installed.size == 1) "" else "s"} downloaded.",
+                    )
+                    FilledTonalButton(onClick = onOpenDownloads, shapes = ButtonDefaults.shapes()) { Text("Change voice") }
+                } else {
+                    BodyText("Download an English voice to get started. Speech is made on your phone, with no internet needed after that.")
+                    Button(onClick = onOpenDownloads, shapes = ButtonDefaults.shapes()) { Text("Choose a voice") }
                 }
             }
         }
-        if (installed.isEmpty()) {
-            Button(onClick = onOpenVoices, shapes = ButtonDefaults.shapes()) { Text("Choose a voice") }
-        } else {
-            FilledTonalButton(onClick = onOpenVoices, shapes = ButtonDefaults.shapes()) { Text("Voices") }
-            Button(
-                onClick = { openTtsSettings(context) },
-                enabled = !isDefaultEngine,
-                shapes = ButtonDefaults.shapes(),
+
+        // ------------------------------------------------------ preferred engine
+        item(key = "tts-engine") {
+            SectionCard(
+                title = "Preferred engine",
+                icon = if (isDefaultEngine) R.drawable.ic_check_circle else R.drawable.ic_info,
+                tone = if (isDefaultEngine) Tone.Good else Tone.Action,
             ) {
-                if (!isDefaultEngine) {
-                    Icon(painterResource(R.drawable.ic_open_in_new), contentDescription = null, modifier = Modifier.size(18.dp))
+                if (isDefaultEngine) {
+                    BodyText("Distillery is your phone's text-to-speech engine. Apps that read aloud now use it.")
+                } else {
+                    BodyText("Make Distillery the text-to-speech engine so apps that read aloud use it:")
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        listOf(
+                            "Tap Open text-to-speech settings.",
+                            "Tap Preferred engine and choose “Distillery (Kokoro, on-device)”.",
+                            "Come back here; this card shows a check.",
+                        ).forEachIndexed { i, step ->
+                            Row {
+                                Text("${i + 1}", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(end = 10.dp, top = 2.dp))
+                                BodyText(step)
+                            }
+                        }
+                    }
                 }
-                Text(
-                    if (isDefaultEngine) "Distillery is the preferred engine" else "Open text-to-speech settings",
-                    modifier = if (isDefaultEngine) Modifier else Modifier.padding(start = 8.dp),
-                )
+                Button(
+                    onClick = { openTtsSettings(context) },
+                    enabled = !isDefaultEngine,
+                    shapes = ButtonDefaults.shapes(),
+                ) {
+                    if (!isDefaultEngine) {
+                        Icon(painterResource(R.drawable.ic_open_in_new), contentDescription = null, modifier = Modifier.size(18.dp))
+                    }
+                    Text(
+                        if (isDefaultEngine) "Distillery is the preferred engine" else "Open text-to-speech settings",
+                        modifier = if (isDefaultEngine) Modifier else Modifier.padding(start = 8.dp),
+                    )
+                }
+                if (isDefaultEngine) {
+                    TextButton(onClick = { openTtsSettings(context) }) { Text("Speech rate and pitch") }
+                }
+            }
+        }
+
+        // ---------------------------------------------------------------- more
+        item(key = "tts-more") {
+            NavGroup {
+                NavRow(
+                    "Pronunciations",
+                    "Fix how a word or name is said",
+                    R.drawable.ic_description,
+                ) { onNavigate(TtsFeature.PRONUNCIATIONS_ROUTE) }
+                HorizontalDivider(Modifier.padding(horizontal = 20.dp))
+                NavRow(
+                    "Test text to speech",
+                    "Speak through Android, the way apps call Distillery",
+                    R.drawable.ic_volume_up,
+                ) { onNavigate(TtsFeature.TEST_ROUTE) }
             }
         }
     }

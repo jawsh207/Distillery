@@ -10,7 +10,7 @@ import app.distillery.stt.ui.MainActivity
 
 /**
  * Answers the system's voice data checks: CHECK_TTS_DATA (which voices are
- * installed) and INSTALL_TTS_DATA (opens the Voices screen to download one).
+ * installed) and INSTALL_TTS_DATA (opens the Downloads tab to download one).
  */
 class VoiceDataActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -3,7 +3,6 @@ package app.distillery.stt.tts.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.text.format.Formatter
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -28,7 +27,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,85 +39,58 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.distillery.stt.R
 import app.distillery.stt.engine.DownloadState
-import app.distillery.stt.tts.Accent
 import app.distillery.stt.tts.KokoroVoice
 import app.distillery.stt.tts.TtsRuntime
-import app.distillery.stt.ui.components.BodyText
-import app.distillery.stt.ui.components.DistilleryScreen
 
 private const val PREVIEW_TEXT = "Hello! This is how I sound when Distillery reads to you."
 
+/** What the Downloads tab says about voices, above their cards. */
+fun voicesIntro(installedCount: Int): String =
+    if (installedCount == 0) {
+        "Your first voice also downloads the Kokoro model and English pronunciation data (roughly 90 MB). " +
+            "Each voice after that is small. Everything runs on your phone."
+    } else {
+        "The voice marked with a check is the one apps get when they don't choose one. " +
+            "Your first voice also brought the Kokoro model, which is deleted with your last voice."
+    }
+
+/**
+ * One voice on the Downloads tab: download, listen, make it the default or delete it.
+ * [speaker] is shared by the tab's voices, so one connection to the engine plays them all.
+ */
 @Composable
-fun VoicesScreen(onBack: () -> Unit, onOpenPronunciations: () -> Unit = {}) {
+fun VoiceItem(voice: KokoroVoice, speaker: EngineSpeaker) {
     val context = LocalContext.current
     val runtime = remember { TtsRuntime.get(context) }
     val installed by runtime.store.installed.collectAsStateWithLifecycle()
     val defaultVoice by runtime.settings.defaultVoice.collectAsStateWithLifecycle()
-    val speaker = remember { EngineSpeaker(context) }
-    DisposableEffect(speaker) { onDispose { speaker.shutdown() } }
-
+    val stateFlow = remember(voice) { runtime.downloads.state(voice) }
+    val state by stateFlow.collectAsStateWithLifecycle(DownloadState.Idle)
     val notificationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
-    var confirmDelete by remember { mutableStateOf<KokoroVoice?>(null) }
-    val bytes = remember(installed) { if (installed.isEmpty()) 0L else runtime.store.bytesOnDisk() }
+    var confirmDelete by remember { mutableStateOf(false) }
 
-    fun download(voice: KokoroVoice) {
-        if (context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
-        if (installed.isEmpty()) runtime.settings.setDefaultVoice(voice)
-        runtime.downloads.start(voice)
-    }
+    VoiceCard(
+        voice = voice,
+        isInstalled = voice in installed,
+        isDefault = voice == defaultVoice && voice in installed,
+        state = state,
+        canPreview = speaker.ready && !speaker.speaking,
+        onDownload = {
+            if (context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+            if (installed.isEmpty()) runtime.settings.setDefaultVoice(voice)
+            runtime.downloads.start(voice)
+        },
+        onCancel = { runtime.downloads.cancel(voice) },
+        onUse = { runtime.settings.setDefaultVoice(voice) },
+        onListen = { speaker.speak(PREVIEW_TEXT, voice, 1f) },
+        onDelete = { confirmDelete = true },
+    )
 
-    DistilleryScreen(title = "Voices", subtitle = "Text to speech · English", onBack = onBack) {
-        item {
-            OutlinedButton(onClick = onOpenPronunciations, shapes = ButtonDefaults.shapes()) {
-                Text("Pronunciations")
-            }
-        }
-        item {
-            BodyText(
-                if (installed.isEmpty()) {
-                    "Your first voice also downloads the Kokoro model and English pronunciation data (roughly 90 MB). " +
-                        "Each voice after that is small. Everything runs on your phone."
-                } else {
-                    "${installed.size} voice${if (installed.size == 1) "" else "s"} downloaded · " +
-                        "${Formatter.formatShortFileSize(context, bytes)} in total. Speech is made on your phone."
-                },
-            )
-        }
-        Accent.entries.forEach { accent ->
-            item(key = "header-${accent.name}") {
-                Text(
-                    accent.label,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 4.dp, top = 8.dp),
-                )
-            }
-            KokoroVoice.entries.filter { it.accent == accent }.forEach { voice ->
-                item(key = voice.id) {
-                    val stateFlow = remember(voice) { runtime.downloads.state(voice) }
-                    val state by stateFlow.collectAsStateWithLifecycle(DownloadState.Idle)
-                    VoiceCard(
-                        voice = voice,
-                        isInstalled = voice in installed,
-                        isDefault = voice == defaultVoice && voice in installed,
-                        state = state,
-                        canPreview = speaker.ready && !speaker.speaking,
-                        onDownload = { download(voice) },
-                        onCancel = { runtime.downloads.cancel(voice) },
-                        onUse = { runtime.settings.setDefaultVoice(voice) },
-                        onListen = { speaker.speak(PREVIEW_TEXT, voice, 1f) },
-                        onDelete = { confirmDelete = voice },
-                    )
-                }
-            }
-        }
-    }
-
-    confirmDelete?.let { voice ->
+    if (confirmDelete) {
         AlertDialog(
-            onDismissRequest = { confirmDelete = null },
+            onDismissRequest = { confirmDelete = false },
             icon = { Icon(painterResource(R.drawable.ic_delete), contentDescription = null) },
             title = { Text("Delete ${voice.displayName}?") },
             text = {
@@ -133,7 +104,7 @@ fun VoicesScreen(onBack: () -> Unit, onOpenPronunciations: () -> Unit = {}) {
             },
             confirmButton = {
                 TextButton(onClick = {
-                    confirmDelete = null
+                    confirmDelete = false
                     runtime.synth.unloadNow()
                     runtime.store.delete(voice)
                     if (runtime.settings.defaultVoice.value == voice) {
@@ -141,7 +112,7 @@ fun VoicesScreen(onBack: () -> Unit, onOpenPronunciations: () -> Unit = {}) {
                     }
                 }) { Text("Delete") }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text("Keep") } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Keep") } },
         )
     }
 }

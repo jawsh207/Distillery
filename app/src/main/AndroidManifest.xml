@@ -7,7 +7,7 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <!-- Network is used for exactly one thing: downloading a speech model or
-         voice the user picked on the Models or Voices screen. Recognition and
+         voice the user picked on the Downloads tab. Recognition and
          speech themselves never use it. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />

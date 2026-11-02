@@ -1,9 +1,4 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// ListItem(headlineContent = …) and Slider(value = …) are deprecated on the
-// Material 3 1.6 line in favour of new overloads; they're kept here because they
-// exist on every 1.5.x release this app targets.
-@file:Suppress("DEPRECATION")
-
 package app.distillery.stt.ui.screens
 
 import android.Manifest
@@ -31,11 +26,8 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearWavyProgressIndicator
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -56,88 +48,63 @@ import app.distillery.stt.DistilleryApplication
 import app.distillery.stt.engine.DownloadState
 import app.distillery.stt.engine.SttModel
 import app.distillery.stt.ui.components.BodyText
-import app.distillery.stt.ui.components.DistilleryScreen
 import kotlinx.coroutines.launch
 import java.util.Locale
 
+/** What the Downloads tab says about speech models, above their cards. */
+const val MODELS_INTRO =
+    "Each model downloads once from Moonshine AI and then runs entirely on your phone. " +
+        "Bigger models are more accurate but need more memory and a faster processor."
+
+/** What the Downloads tab says about speech models, below their cards. */
+const val MODELS_FOOTNOTE =
+    "Accuracy is word error rate on the Open ASR Leaderboard (lower is better), as published by Moonshine. " +
+        "Distillery only offers models whose license is MIT and refuses any other download."
+
+/** One speech model on the Downloads tab: download, use or delete it. */
 @Composable
-fun ModelsScreen(onBack: () -> Unit) {
+fun ModelItem(model: SttModel) {
     val context = LocalContext.current
     val app = context.applicationContext as DistilleryApplication
     val installed by app.modelStore.installed.collectAsStateWithLifecycle()
     val settingsVersion by app.settings.changes.collectAsStateWithLifecycle(0)
-    val chosen = remember(settingsVersion) { app.settings.chosenModel }
     val wifiOnly = remember(settingsVersion) { app.settings.wifiOnlyDownloads }
-    val active = remember(settingsVersion, installed) { app.modelStore.resolveModel(chosen) }
+    val active = remember(settingsVersion, installed) { app.modelStore.resolveModel(app.settings.chosenModel) }
+    val stateFlow = remember(model) { app.downloads.state(model) }
+    val state by stateFlow.collectAsStateWithLifecycle(DownloadState.Idle)
+    val bytes = remember(installed) { if (model in installed) app.modelStore.bytesOnDisk(model) else 0L }
 
     val notificationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     val scope = rememberCoroutineScope()
-    var confirmDelete by remember { mutableStateOf<SttModel?>(null) }
+    var confirmDelete by remember { mutableStateOf(false) }
 
-    fun download(model: SttModel) {
-        if (context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
-        // First model, or the chosen one isn't installed: make this one the choice.
-        if (!app.modelStore.isInstalled(app.settings.chosenModel)) app.settings.chosenModel = model
-        app.downloads.start(model)
-    }
-
-    DistilleryScreen(title = "Speech models", subtitle = "English · streaming · MIT licensed", onBack = onBack) {
-        item {
-            BodyText(
-                "Each model downloads once from Moonshine AI and then runs entirely on your phone. " +
-                    "Bigger models are more accurate but need more memory and a faster processor.",
-            )
-        }
-        item {
-            ListItem(
-                headlineContent = { Text("Download over Wi-Fi only") },
-                supportingContent = { Text("Downloads wait for an unmetered connection") },
-                trailingContent = {
-                    Switch(checked = wifiOnly, onCheckedChange = { app.settings.wifiOnlyDownloads = it })
-                },
-                colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        SttModel.entries.forEach { model ->
-            item(key = model.id) {
-                val stateFlow = remember(model) { app.downloads.state(model) }
-                val state by stateFlow.collectAsStateWithLifecycle(DownloadState.Idle)
-                val bytes = remember(installed) {
-                    if (model in installed) app.modelStore.bytesOnDisk(model) else 0L
-                }
-                ModelCard(
-                    model = model,
-                    isInstalled = model in installed,
-                    isActive = model == active,
-                    isRecommended = model == SttModel.SMALL,
-                    state = state,
-                    wifiOnly = wifiOnly,
-                    bytesOnDisk = bytes,
-                    onDownload = { download(model) },
-                    onCancel = { app.downloads.cancel(model) },
-                    onUse = {
-                        app.settings.chosenModel = model
-                        app.engine.preload(model)
-                    },
-                    onDelete = { confirmDelete = model },
-                )
+    ModelCard(
+        model = model,
+        isInstalled = model in installed,
+        isActive = model == active,
+        isRecommended = model == SttModel.SMALL,
+        state = state,
+        wifiOnly = wifiOnly,
+        bytesOnDisk = bytes,
+        onDownload = {
+            if (context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
-        }
-        item {
-            BodyText(
-                "Accuracy is word error rate on the Open ASR Leaderboard (lower is better), as published by Moonshine. " +
-                    "Distillery only offers models whose license is MIT and refuses any other download.",
-                modifier = Modifier.padding(top = 4.dp),
-            )
-        }
-    }
+            // First model, or the chosen one isn't installed: make this one the choice.
+            if (!app.modelStore.isInstalled(app.settings.chosenModel)) app.settings.chosenModel = model
+            app.downloads.start(model)
+        },
+        onCancel = { app.downloads.cancel(model) },
+        onUse = {
+            app.settings.chosenModel = model
+            app.engine.preload(model)
+        },
+        onDelete = { confirmDelete = true },
+    )
 
-    confirmDelete?.let { model ->
+    if (confirmDelete) {
         AlertDialog(
-            onDismissRequest = { confirmDelete = null },
+            onDismissRequest = { confirmDelete = false },
             icon = { Icon(painterResource(R.drawable.ic_delete), contentDescription = null) },
             title = { Text("Delete ${model.displayName}?") },
             text = {
@@ -151,14 +118,14 @@ fun ModelsScreen(onBack: () -> Unit) {
             },
             confirmButton = {
                 TextButton(onClick = {
-                    confirmDelete = null
+                    confirmDelete = false
                     scope.launch {
                         app.engine.unloadNow()
                         app.modelStore.delete(model)
                     }
                 }) { Text("Delete") }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text("Keep") } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Keep") } },
         )
     }
 }

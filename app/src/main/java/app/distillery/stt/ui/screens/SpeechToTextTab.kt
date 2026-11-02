@@ -14,7 +14,6 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,10 +25,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
@@ -57,11 +53,13 @@ import app.distillery.stt.Notifications
 import app.distillery.stt.R
 import app.distillery.stt.DistilleryApplication
 import app.distillery.stt.engine.Diagnostics
-import app.distillery.stt.feature.TtsFeature
 import app.distillery.stt.engine.DistillerySettings
 import app.distillery.stt.engine.Problem
 import app.distillery.stt.ui.VoiceInputSetup
 import app.distillery.stt.ui.components.BodyText
+import app.distillery.stt.ui.components.LicensesAction
+import app.distillery.stt.ui.components.NavGroup
+import app.distillery.stt.ui.components.NavRow
 import app.distillery.stt.ui.components.SectionCard
 import app.distillery.stt.ui.components.Tone
 import app.distillery.stt.ui.components.DistilleryScreen
@@ -71,11 +69,10 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun HomeScreen(
-    onOpenModels: () -> Unit,
+fun SpeechToTextTab(
+    onOpenDownloads: () -> Unit,
     onOpenTest: () -> Unit,
     onOpenLicenses: () -> Unit,
-    onNavigate: (String) -> Unit = {},
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as DistilleryApplication
@@ -103,7 +100,11 @@ fun HomeScreen(
         app.modelStore.resolveModel(app.settings.chosenModel)
     }
 
-    DistilleryScreen(title = "Distillery", subtitle = "On-device speech to text, powered by Moonshine") {
+    DistilleryScreen(
+        title = "Speech to text",
+        subtitle = "Distillery · Moonshine, on your phone",
+        actions = { LicensesAction(onOpenLicenses) },
+    ) {
         // -------------------------------------------------- last failure, if any
         if (problem != null || modelCheck != null) {
             item {
@@ -177,10 +178,10 @@ fun HomeScreen(
                         "Using Moonshine ${activeModel.displayName} (English, streaming, MIT). " +
                             "${installed.size} of 3 models downloaded.",
                     )
-                    FilledTonalButton(onClick = onOpenModels, shapes = ButtonDefaults.shapes()) { Text("Change model") }
+                    FilledTonalButton(onClick = onOpenDownloads, shapes = ButtonDefaults.shapes()) { Text("Change model") }
                 } else {
                     BodyText("Download a model to get started. It's a one-time download; recognition runs offline after that.")
-                    Button(onClick = onOpenModels, shapes = ButtonDefaults.shapes()) { Text("Choose a model") }
+                    Button(onClick = onOpenDownloads, shapes = ButtonDefaults.shapes()) { Text("Choose a model") }
                 }
             }
         }
@@ -189,9 +190,6 @@ fun HomeScreen(
         item {
             DefaultVoiceInputCard(isDefault = isDefault, context = context)
         }
-
-        // ------------------------------------------------------ text to speech
-        with(TtsFeature) { homeItems(onNavigate) }
 
         // ------------------------------------------------------------ dictation
         item {
@@ -210,12 +208,8 @@ fun HomeScreen(
 
         // ---------------------------------------------------------------- more
         item {
-            Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceContainer) {
-                Column {
-                    NavRow("Test", "Dictation and recordings, the way apps call Distillery", R.drawable.ic_mic, onOpenTest)
-                    HorizontalDivider(Modifier.padding(horizontal = 20.dp))
-                    NavRow("Open-source licenses", "Distillery, Moonshine, models and libraries", R.drawable.ic_description, onOpenLicenses)
-                }
+            NavGroup {
+                NavRow("Test speech to text", "Dictation and recordings, the way apps call Distillery", R.drawable.ic_mic, onOpenTest)
             }
         }
     }
@@ -379,21 +373,6 @@ private fun CodeBlock(code: String, context: Context) {
             }
         }
     }
-}
-
-@Composable
-private fun NavRow(title: String, subtitle: String, icon: Int, onClick: () -> Unit) {
-    ListItem(
-        headlineContent = { Text(title) },
-        supportingContent = { Text(subtitle) },
-        leadingContent = { Icon(painterResource(icon), contentDescription = null) },
-        trailingContent = { Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null) },
-        colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 4.dp),
-    )
 }
 
 private fun hasMic(context: Context) =

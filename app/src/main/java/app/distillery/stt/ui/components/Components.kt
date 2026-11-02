@@ -2,12 +2,14 @@
 package app.distillery.stt.ui.components
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -22,6 +24,8 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -47,6 +51,7 @@ fun DistilleryScreen(
     title: String,
     subtitle: String? = null,
     onBack: (() -> Unit)? = null,
+    actions: @Composable RowScope.() -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
     content: LazyListScope.() -> Unit,
 ) {
@@ -67,6 +72,7 @@ fun DistilleryScreen(
                         }
                     }
                 },
+                actions = actions,
                 scrollBehavior = scrollBehavior,
             )
         },
@@ -141,5 +147,53 @@ fun BodyText(text: String, modifier: Modifier = Modifier) {
         style = MaterialTheme.typography.bodyLarge,
         color = LocalContentColor.current.copy(alpha = 0.8f),
         modifier = modifier,
+    )
+}
+
+/** A group of [NavRow]s on one rounded surface, like a card. */
+@Composable
+fun NavGroup(content: @Composable ColumnScope.() -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(content = content)
+    }
+}
+
+/** A row that opens another screen. */
+@Suppress("DEPRECATION") // ListItem(headlineContent = …) exists on every 1.5.x release this app targets.
+@Composable
+fun NavRow(title: String, subtitle: String, @DrawableRes icon: Int, onClick: () -> Unit) {
+    ListItem(
+        headlineContent = { Text(title) },
+        supportingContent = { Text(subtitle) },
+        leadingContent = { Icon(painterResource(icon), contentDescription = null) },
+        trailingContent = { Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null) },
+        colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 4.dp),
+    )
+}
+
+/** The top bar's way to the open-source licenses, shared by every tab. */
+@Composable
+fun LicensesAction(onClick: () -> Unit) {
+    IconButton(onClick = onClick) {
+        Icon(painterResource(R.drawable.ic_info_outline), contentDescription = "About and open-source licenses")
+    }
+}
+
+/** A heading between groups of cards in a list. */
+@Composable
+fun ListHeading(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text,
+        style = MaterialTheme.typography.titleMedium,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = modifier.padding(start = 4.dp, top = 8.dp),
     )
 }

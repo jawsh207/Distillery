@@ -64,7 +64,6 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.distillery.stt.R
 import app.distillery.stt.DistilleryApplication
-import app.distillery.stt.feature.TtsFeature
 import app.distillery.stt.ui.VoiceInputSetup
 import app.distillery.stt.ui.components.BodyText
 import app.distillery.stt.ui.components.DistilleryScreen
@@ -77,7 +76,7 @@ import java.util.Locale
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun TestScreen(onBack: () -> Unit, onOpenModels: () -> Unit, onNavigate: (String) -> Unit = {}) {
+fun TestScreen(onBack: () -> Unit, onOpenModels: () -> Unit) {
     val context = LocalContext.current
     val app = context.applicationContext as DistilleryApplication
     val tester = remember { RecognizerTester(context.applicationContext) }
@@ -297,9 +296,6 @@ fun TestScreen(onBack: () -> Unit, onOpenModels: () -> Unit, onNavigate: (String
                 Metric("Total", tester.totalMs?.let { seconds(it) } ?: "–", Modifier.weight(1f))
             }
         }
-
-        // Text to speech test.
-        with(TtsFeature) { testItems(onNavigate) }
 
         item {
             Text(
