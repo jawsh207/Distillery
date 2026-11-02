@@ -32,7 +32,7 @@ class DistilleryApplication : Application() {
         private set
 
     /** The offensive-word list, loaded the first time a result is masked. */
-    val offensiveWords: OffensiveWords by lazy { assets.open(OffensiveWords.ASSET).use { OffensiveWords.load(it) } }
+    internal val offensiveWords: OffensiveWords by lazy { assets.open(OffensiveWords.ASSET).use { OffensiveWords.load(it) } }
 
     /** True while any model download is queued or running. */
     lateinit var anyDownloadActive: StateFlow<Boolean>
