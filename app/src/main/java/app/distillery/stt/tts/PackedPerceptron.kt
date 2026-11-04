@@ -8,24 +8,25 @@ import java.util.zip.GZIPInputStream
 
 /**
  * The weights of a perceptron model (the tagger, the word guesser), in the
- * binary form tools/perceptron_pack.py writes: feature names are 64-bit
- * FNV-1a hashes in a sorted array, so loading is a few array reads rather
- * than parsing hundreds of thousands of lines.
+ * binary form tools/perceptron_pack.py writes ("DPM2"): feature names are
+ * 32-bit hashes in a sorted array, so loading is a few array reads rather
+ * than parsing hundreds of thousands of lines. Weights are 16-bit; only their
+ * order matters.
  */
 class PackedPerceptron private constructor(
     val classes: Array<String>,
     val tagdict: Map<String, Int>,
-    private val hashes: LongArray,
+    private val hashes: IntArray,
     private val offsets: IntArray,
     private val pairClasses: ShortArray,
-    private val pairWeights: IntArray,
+    private val pairWeights: ShortArray,
 ) {
 
     /** Adds [feature]'s weights to [scores] (indexed by class). */
     fun add(feature: String, scores: IntArray) {
-        val k = hashes.binarySearch(fnv1a64(feature))
+        val k = hashes.binarySearch(hash32(feature))
         if (k < 0) return
-        for (p in offsets[k] until offsets[k + 1]) scores[pairClasses[p].toInt()] += pairWeights[p]
+        for (p in offsets[k] until offsets[k + 1]) scores[pairClasses[p].toInt()] += pairWeights[p].toInt()
     }
 
     /** The highest-scoring class over [features]; ties go to the lowest index. */
@@ -47,10 +48,16 @@ class PackedPerceptron private constructor(
             return h
         }
 
+        /** fnv1a64 with its two halves xored, as tools/perceptron_pack.py `hash32`. */
+        fun hash32(text: String): Int {
+            val h = fnv1a64(text)
+            return (h xor (h ushr 32)).toInt()
+        }
+
         fun load(gzipped: InputStream): PackedPerceptron {
             val input = DataInputStream(GZIPInputStream(gzipped, 1 shl 16).buffered(1 shl 16))
             val magic = ByteArray(4).also { input.readFully(it) }
-            require(magic.decodeToString() == "DPM1") { "Not a packed perceptron model" }
+            require(magic.decodeToString() == "DPM2") { "Not a packed perceptron model" }
             fun utf(): String = ByteArray(input.readUnsignedShort()).also { input.readFully(it) }.decodeToString()
 
             val classes = Array(input.readInt()) { utf() }
@@ -58,15 +65,17 @@ class PackedPerceptron private constructor(
             repeat(input.readInt()) { tagdict[utf()] = input.readShort().toInt() }
 
             val n = input.readInt()
-            val hashes = LongArray(n)
-            ByteBuffer.wrap(ByteArray(n * 8).also { input.readFully(it) }).asLongBuffer().get(hashes)
+            val hashes = IntArray(n)
+            ByteBuffer.wrap(ByteArray(n * 4).also { input.readFully(it) }).asIntBuffer().get(hashes)
+            val counts = ShortArray(n)
+            ByteBuffer.wrap(ByteArray(n * 2).also { input.readFully(it) }).asShortBuffer().get(counts)
             val offsets = IntArray(n + 1)
-            ByteBuffer.wrap(ByteArray((n + 1) * 4).also { input.readFully(it) }).asIntBuffer().get(offsets)
+            for (k in 0 until n) offsets[k + 1] = offsets[k] + (counts[k].toInt() and 0xffff)
             val pairs = input.readInt()
             val pairClasses = ShortArray(pairs)
             ByteBuffer.wrap(ByteArray(pairs * 2).also { input.readFully(it) }).asShortBuffer().get(pairClasses)
-            val pairWeights = IntArray(pairs)
-            ByteBuffer.wrap(ByteArray(pairs * 4).also { input.readFully(it) }).asIntBuffer().get(pairWeights)
+            val pairWeights = ShortArray(pairs)
+            ByteBuffer.wrap(ByteArray(pairs * 2).also { input.readFully(it) }).asShortBuffer().get(pairWeights)
             return PackedPerceptron(classes, tagdict, hashes, offsets, pairClasses, pairWeights)
         }
     }
