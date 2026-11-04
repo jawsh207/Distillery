@@ -64,19 +64,16 @@ jobs:
               unzip -l "$apk" | grep -q "assets/tts/$f\$" \
                 || { echo "::error title=$name::assets/tts/$f is missing"; exit 1; }
             done
-            # Kokoro needs the full ONNX Runtime (about 18 MB for arm64), not
-            # Moonshine's cut-down one (about 6 MB).
-            ort=$(unzip -p "$apk" lib/arm64-v8a/libonnxruntime.so | wc -c)
-            echo "$name: ONNX Runtime $ort bytes"
-            [ "$ort" -gt 12000000 ] \
-              || { echo "::error title=$name::Not the full ONNX Runtime ($ort bytes)"; exit 1; }
+            # Distillery's ONNX Runtime, not Moonshine's copy, which can't run Kokoro.
+            tools/onnxruntime/check-apk.sh "$apk"
           done
+          echo "::notice title=APK sizes::$(for f in "$APK" "$DEBUG_APK"; do echo "$(basename "$f") $(stat -c %s "$f") bytes;"; done | tr '\n' ' ')"
           # Releases are arm64-v8a only; dev builds also carry x86_64 for the emulator.
           unzip -l "$APK" | grep -q 'lib/x86_64/' \
             && { echo "::error title=Release build::The release APK contains x86_64 libraries"; exit 1; }
           unzip -l "$APK" | grep -q 'lib/arm64-v8a/' \
             || { echo "::error title=Release build::The release APK has no arm64-v8a libraries"; exit 1; }
-          echo "Both builds have text to speech and the full ONNX Runtime."
+          echo "Both builds have text to speech and the right ONNX Runtime."
 
       - name: Report build errors
         if: failure()

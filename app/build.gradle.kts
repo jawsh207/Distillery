@@ -89,21 +89,32 @@ android {
     }
 }
 
-// The full ONNX Runtime.
+// ONNX Runtime.
 //
 // Moonshine's AAR ships an ONNX Runtime cut down to the operators of its own
 // models, and the 0.1.5 build lacks kernels the Kokoro text-to-speech models
-// need (QLinearMatMul). Every build replaces it with the stock ONNX Runtime
-// Android library of the same version, which has every operator; speech
-// recognition runs on it unchanged.
+// need (QLinearMatMul). Every build replaces it with Distillery's own build of
+// the same version: compiled from source by .github/workflows/onnxruntime.yml
+// with only the operators Distillery's models use, published as a GitHub
+// release, and named with checksums in third_party/onnxruntime/libraries.properties.
+// Until that file exists, the stock ONNX Runtime Android library (every
+// operator, three times the size) is used instead.
+val ortLibraries = rootProject.file("third_party/onnxruntime/libraries.properties")
+    .takeIf { it.isFile }
+    ?.let { file -> Properties().apply { file.inputStream().use { load(it) } } }
+
 val stockOrt: Configuration by configurations.creating {
     isTransitive = false
     isCanBeConsumed = false
 }
 
-abstract class ExtractStockOrt : DefaultTask() {
-    @get:InputFiles abstract val aar: ConfigurableFileCollection
+/** Puts a libonnxruntime.so per ABI in [outputDir], which becomes a jniLibs folder. */
+abstract class OrtJniTask : DefaultTask() {
     @get:OutputDirectory abstract val outputDir: DirectoryProperty
+}
+
+abstract class ExtractStockOrt : OrtJniTask() {
+    @get:InputFiles abstract val aar: ConfigurableFileCollection
     @get:Inject abstract val fs: FileSystemOperations
     @get:Inject abstract val archives: ArchiveOperations
 
@@ -121,22 +132,59 @@ abstract class ExtractStockOrt : DefaultTask() {
     }
 }
 
-val extractStockOrt = tasks.register<ExtractStockOrt>("extractStockOrt") {
-    aar.from(stockOrt)
-    outputDir.set(layout.buildDirectory.dir("generated/stockOrtJni"))
+/** Downloads Distillery's ONNX Runtime and checks every byte against its checksum. */
+abstract class FetchDistilleryOrt : OrtJniTask() {
+    @get:Input abstract val baseUrl: Property<String>
+    /** ABI → SHA-256 of its libonnxruntime.so. */
+    @get:Input abstract val checksums: MapProperty<String, String>
+
+    @TaskAction
+    fun fetch() {
+        for ((abi, expected) in checksums.get()) {
+            val target = outputDir.file("$abi/libonnxruntime.so").get().asFile
+            if (target.isFile && sha256(target.readBytes()) == expected) continue
+            val url = "${baseUrl.get()}/libonnxruntime-$abi.so"
+            val bytes = java.net.URI(url).toURL().openStream().use { it.readBytes() }
+            val actual = sha256(bytes)
+            if (actual != expected) throw GradleException("$url has SHA-256 $actual, expected $expected")
+            target.parentFile.mkdirs()
+            target.writeBytes(bytes)
+        }
+    }
+
+    private fun sha256(bytes: ByteArray) =
+        java.security.MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
 }
+
+@Suppress("UNCHECKED_CAST")
+val provideOrt = (if (ortLibraries != null) {
+    tasks.register<FetchDistilleryOrt>("fetchDistilleryOrt") {
+        baseUrl.set("https://github.com/jawsh207/Distillery/releases/download/${ortLibraries.getProperty("tag")}")
+        checksums.set(
+            listOf("arm64-v8a", "x86_64").associateWith {
+                ortLibraries.getProperty("sha256.$it") ?: throw GradleException("libraries.properties has no sha256.$it")
+            },
+        )
+        outputDir.set(layout.buildDirectory.dir("generated/distilleryOrtJni"))
+    }
+} else {
+    tasks.register<ExtractStockOrt>("extractStockOrt") {
+        aar.from(stockOrt)
+        outputDir.set(layout.buildDirectory.dir("generated/stockOrtJni"))
+    }
+}) as TaskProvider<OrtJniTask>
 
 androidComponents {
     onVariants { variant ->
-        variant.sources.jniLibs?.addGeneratedSourceDirectory(extractStockOrt, ExtractStockOrt::outputDir)
+        variant.sources.jniLibs?.addGeneratedSourceDirectory(provideOrt, OrtJniTask::outputDir)
         // The app's own copy is picked over the one inside Moonshine's AAR;
-        // CI checks the APKs really carry the stock library.
+        // CI checks which library the APKs really carry.
         variant.packaging.jniLibs.pickFirsts.add("**/libonnxruntime.so")
     }
 }
 
 dependencies {
-    stockOrt(libs.onnxruntime.android)
+    if (ortLibraries == null) stockOrt(libs.onnxruntime.android)
     implementation(libs.moonshine.voice)
 
     implementation(libs.androidx.core.ktx)

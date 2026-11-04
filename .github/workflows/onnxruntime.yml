@@ -1,0 +1,171 @@
+name: ONNX Runtime
+
+# Builds Distillery's cut-down ONNX Runtime and publishes it.
+#
+# 1. List the operators Distillery's models use (tools/onnxruntime/generate-ops-config.py)
+#    and commit the list if it changed.
+# 2. Build ONNX Runtime from source with only those operators, for Android
+#    (arm64-v8a for releases, x86_64 for emulators) and for Linux.
+# 3. Run every model on the Linux build through Moonshine's own library
+#    (tools/onnxruntime/smoke-test.py).
+# 4. Publish the Android libraries as a GitHub release and record their
+#    checksums in third_party/onnxruntime/libraries.properties, which the app
+#    build reads.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - tools/onnxruntime/**
+      - .github/workflows/onnxruntime.yml
+
+permissions:
+  contents: write
+  actions: write
+
+env:
+  ORT_VERSION: 1.23.2
+  MOONSHINE_VERSION: 0.1.5
+  ANDROID_NDK_VERSION: 28.2.13676358
+
+jobs:
+  config:
+    runs-on: ubuntu-latest
+    outputs:
+      hash: ${{ steps.gen.outputs.hash }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "moonshine-voice==$MOONSHINE_VERSION" "onnxruntime==$ORT_VERSION"
+      - name: Moonshine's source, for the voice activity model it compiles in
+        run: |
+          GIT_LFS_SKIP_SMUDGE=1 git clone -q --depth 1 --branch "v$MOONSHINE_VERSION" \
+            --filter=blob:none --sparse https://github.com/moonshine-ai/moonshine "$RUNNER_TEMP/moonshine"
+          git -C "$RUNNER_TEMP/moonshine" sparse-checkout set --no-cone /core/silero-vad-model-data.h
+      - uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/models
+          key: models-${{ env.MOONSHINE_VERSION }}-${{ hashFiles('app/src/main/java/app/distillery/stt/tts/KokoroVoice.kt') }}
+      - name: List the operators
+        id: gen
+        run: |
+          set -o pipefail
+          python3 tools/onnxruntime/generate-ops-config.py \
+            --moonshine-src "$RUNNER_TEMP/moonshine" --cache "$RUNNER_TEMP/models" 2>&1 | tee gen.log \
+            || { echo "::error title=Operator list::$(tail -30 gen.log | tr '\n' '|')"; exit 1; }
+          echo "hash=$(sha256sum third_party/onnxruntime/distillery-operators.config | cut -c1-8)" >> "$GITHUB_OUTPUT"
+          echo "::notice title=Operator list::$(tail -1 gen.log)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: operators
+          path: third_party/onnxruntime/distillery-operators.config
+
+  build:
+    needs: config
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [android-arm64-v8a, android-x86_64, linux-x86_64]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v5
+        with:
+          name: operators
+          path: third_party/onnxruntime
+      - uses: actions/cache@v4
+        id: cache
+        with:
+          path: out
+          key: ort-${{ env.ORT_VERSION }}-${{ matrix.target }}-${{ needs.config.outputs.hash }}-${{ hashFiles('tools/onnxruntime/build.sh') }}
+      - uses: android-actions/setup-android@v3
+        if: steps.cache.outputs.cache-hit != 'true' && startsWith(matrix.target, 'android')
+        with:
+          packages: "ndk;${{ env.ANDROID_NDK_VERSION }}"
+      - name: Build
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          set -o pipefail
+          tools/onnxruntime/build.sh "${{ matrix.target }}" out 2>&1 | tee build.log > /dev/null \
+            || { { grep -E 'error|Error|ERROR' build.log | tail -40; tail -20 build.log; } | sed 's/%/%25/g' \
+                 | awk 'BEGIN{ORS="%0A"} {print}' > err.txt; echo "::error title=Build ${{ matrix.target }}::$(cat err.txt)"; exit 1; }
+          tail -5 build.log
+      - name: Size
+        run: echo "::notice title=${{ matrix.target }}::$(stat -c %s out/libonnxruntime.so) bytes"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ort-${{ matrix.target }}
+          path: out/libonnxruntime.so
+
+  smoke-test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "moonshine-voice==$MOONSHINE_VERSION"
+      - uses: actions/download-artifact@v5
+        with:
+          name: ort-linux-x86_64
+          path: ort
+      - name: Recording to transcribe
+        run: |
+          GIT_LFS_SKIP_SMUDGE=1 git clone -q --depth 1 --branch "v$MOONSHINE_VERSION" \
+            --filter=blob:none --sparse https://github.com/moonshine-ai/moonshine "$RUNNER_TEMP/moonshine"
+          git -C "$RUNNER_TEMP/moonshine" sparse-checkout set --no-cone /test-assets/beckett.wav
+      - uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/smoke
+          key: smoke-models-${{ env.MOONSHINE_VERSION }}
+      - name: Run every model
+        run: |
+          set -o pipefail
+          python3 tools/onnxruntime/smoke-test.py --runtime ort/libonnxruntime.so \
+            --wav "$RUNNER_TEMP/moonshine/test-assets/beckett.wav" --cache "$RUNNER_TEMP/smoke" 2>&1 | tee smoke.log \
+            || { echo "::error title=Smoke test::$(grep -v fetching smoke.log | tail -30 | tr '\n' '|')"; exit 1; }
+          echo "::notice title=Smoke test::$(grep -E 'STREAMING|kokoro_' smoke.log | tr '\n' '|')"
+
+  publish:
+    needs: [config, smoke-test]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v5
+        with:
+          path: artifacts
+      - name: Release the libraries
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="onnxruntime-$ORT_VERSION-${{ needs.config.outputs.hash }}"
+          mkdir dist
+          cp artifacts/ort-android-arm64-v8a/libonnxruntime.so dist/libonnxruntime-arm64-v8a.so
+          cp artifacts/ort-android-x86_64/libonnxruntime.so dist/libonnxruntime-x86_64.so
+          cp artifacts/operators/distillery-operators.config dist/
+          cp artifacts/operators/distillery-operators.config third_party/onnxruntime/
+          (cd dist && sha256sum * > SHA256SUMS)
+          cat dist/SHA256SUMS
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" dist/* --target "$GITHUB_SHA" --prerelease --latest=false \
+              --title "ONNX Runtime $ORT_VERSION for Distillery" \
+              --notes "ONNX Runtime $ORT_VERSION built from source (MIT) by the ONNX Runtime workflow, with only the operators listed in distillery-operators.config. The app build downloads these and checks them against third_party/onnxruntime/libraries.properties."
+          fi
+          {
+            echo "# Written by .github/workflows/onnxruntime.yml; the app build downloads these."
+            echo "tag=$TAG"
+            echo "sha256.arm64-v8a=$(sha256sum dist/libonnxruntime-arm64-v8a.so | cut -d' ' -f1)"
+            echo "sha256.x86_64=$(sha256sum dist/libonnxruntime-x86_64.so | cut -d' ' -f1)"
+          } > third_party/onnxruntime/libraries.properties
+          git config user.name jawsh207
+          git config user.email jawsh@tuta.com
+          git add third_party/onnxruntime
+          if ! git diff --cached --quiet; then
+            git commit -m "ONNX Runtime: use $TAG"
+            git push
+            gh workflow run build.yml --ref main
+          fi
