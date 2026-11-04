@@ -80,6 +80,13 @@ jobs:
         with:
           path: out
           key: ort-${{ env.ORT_VERSION }}-${{ matrix.target }}-${{ needs.config.outputs.hash }}-${{ hashFiles('tools/onnxruntime/build.sh') }}
+      - uses: actions/setup-python@v5
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          python-version: "3.12"
+      # ONNX Runtime's build reads the operator list with it.
+      - run: pip install flatbuffers
+        if: steps.cache.outputs.cache-hit != 'true'
       - uses: android-actions/setup-android@v3
         if: steps.cache.outputs.cache-hit != 'true' && startsWith(matrix.target, 'android')
         with:
