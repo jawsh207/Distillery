@@ -88,9 +88,8 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
           set -o pipefail
-          tools/onnxruntime/build.sh "${{ matrix.target }}" out 2>&1 | tee build.log > /dev/null \
-            || { { grep -E 'error|Error|ERROR' build.log | tail -40; tail -20 build.log; } | sed 's/%/%25/g' \
-                 | awk 'BEGIN{ORS="%0A"} {print}' > err.txt; echo "::error title=Build ${{ matrix.target }}::$(cat err.txt)"; exit 1; }
+          tools/onnxruntime/build.sh "${{ matrix.target }}" out > build.log 2>&1 \
+            || { tail -80 build.log; echo "::error title=Build ${{ matrix.target }}::$(grep -v Namespace build.log | grep -E 'error|Error' | tail -5 | tr '\n' '|')"; exit 1; }
           tail -5 build.log
       - name: Size
         run: echo "::notice title=${{ matrix.target }}::$(stat -c %s out/libonnxruntime.so) bytes"
