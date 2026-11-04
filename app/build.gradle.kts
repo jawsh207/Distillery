@@ -99,6 +99,10 @@ android {
 // release, and named with checksums in third_party/onnxruntime/libraries.properties.
 // Until that file exists, the stock ONNX Runtime Android library (every
 // operator, three times the size) is used instead.
+//
+// -Pdistillery.ortDir=DIR uses libraries built locally with
+// tools/onnxruntime/build.sh instead (DIR/<abi>/libonnxruntime.so), as a
+// from-source build such as F-Droid's does.
 val ortLibraries = rootProject.file("third_party/onnxruntime/libraries.properties")
     .takeIf { it.isFile }
     ?.let { file -> Properties().apply { file.inputStream().use { load(it) } } }
@@ -132,6 +136,20 @@ abstract class ExtractStockOrt : OrtJniTask() {
     }
 }
 
+/** Copies locally built libraries from [inputDir]. */
+abstract class CopyLocalOrt : OrtJniTask() {
+    @get:InputDirectory abstract val inputDir: DirectoryProperty
+    @get:Inject abstract val fs: FileSystemOperations
+
+    @TaskAction
+    fun copy() {
+        fs.sync {
+            from(inputDir) { include("*/libonnxruntime.so") }
+            into(outputDir)
+        }
+    }
+}
+
 /** Downloads Distillery's ONNX Runtime and checks every byte against its checksum. */
 abstract class FetchDistilleryOrt : OrtJniTask() {
     @get:Input abstract val baseUrl: Property<String>
@@ -157,7 +175,14 @@ abstract class FetchDistilleryOrt : OrtJniTask() {
 }
 
 @Suppress("UNCHECKED_CAST")
-val provideOrt = (if (ortLibraries != null) {
+val localOrtDir = providers.gradleProperty("distillery.ortDir").orNull
+
+val provideOrt = (if (localOrtDir != null) {
+    tasks.register<CopyLocalOrt>("copyLocalOrt") {
+        inputDir.set(rootProject.file(localOrtDir))
+        outputDir.set(layout.buildDirectory.dir("generated/localOrtJni"))
+    }
+} else if (ortLibraries != null) {
     tasks.register<FetchDistilleryOrt>("fetchDistilleryOrt") {
         baseUrl.set("https://github.com/jawsh207/Distillery/releases/download/${ortLibraries.getProperty("tag")}")
         checksums.set(
@@ -184,7 +209,7 @@ androidComponents {
 }
 
 dependencies {
-    if (ortLibraries == null) stockOrt(libs.onnxruntime.android)
+    if (localOrtDir == null && ortLibraries == null) stockOrt(libs.onnxruntime.android)
     implementation(libs.moonshine.voice)
 
     implementation(libs.androidx.core.ktx)

@@ -1,16 +1,15 @@
-# DRAFT fdroiddata recipe. Fill in the repository URLs and expect review
-# changes; see docs/BUILDING.md.
+# DRAFT fdroiddata recipe. Expect review changes; see docs/BUILDING.md.
 Categories:
   - System
   - Writing
 License: GPL-3.0-or-later
-SourceCode: https://REPLACE-WITH-REPOSITORY
-IssueTracker: https://REPLACE-WITH-REPOSITORY/issues
+SourceCode: https://github.com/jawsh207/Distillery
+IssueTracker: https://github.com/jawsh207/Distillery/issues
 
 AutoName: Distillery
 
 RepoType: git
-Repo: https://REPLACE-WITH-REPOSITORY.git
+Repo: https://github.com/jawsh207/Distillery.git
 
 Builds:
   - versionName: 0.1.0
@@ -20,7 +19,7 @@ Builds:
     submodules: true
     sudo:
       - apt-get update
-      - apt-get install -y cmake ninja-build python3
+      - apt-get install -y cmake ninja-build python3 python3-flatbuffers
     gradle:
       - yes
     rm:
@@ -32,8 +31,12 @@ Builds:
       - cd ../third_party/moonshine
       - ANDROID_SDK_ROOT=$$SDK$$ ANDROID_NDK_VERSION=28.2.13676358 MOONSHINE_ORT_ROOT=$PWD/../../build/ort
         scripts/build-ort-android.sh force arm64-v8a
+      # Distillery's own ONNX Runtime, which Kokoro needs (Moonshine's lacks some of its operators).
+      - cd ../..
+      - ANDROID_HOME=$$SDK$$ ORT_WORK=$PWD/build/ort-distillery tools/onnxruntime/build.sh android-arm64-v8a ort/arm64-v8a
     gradleprops:
       - distillery.moonshineSource=third_party/moonshine
+      - distillery.ortDir=ort
     ndk: 28.2.13676358
 
 AutoUpdateMode: Version

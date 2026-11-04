@@ -54,7 +54,7 @@ object OssLicenses {
                     "MIT", "MIT-moonshine.txt",
                 ),
                 OssComponent(
-                    "onnxruntime", "ONNX Runtime 1.23.2", "Microsoft Corporation · full build, which Kokoro needs",
+                    "onnxruntime", "ONNX Runtime 1.23.2", "Microsoft Corporation · built from source with only the operators Distillery's models use",
                     "MIT", "MIT-onnxruntime.txt",
                 ),
                 OssComponent(

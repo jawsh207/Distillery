@@ -6,16 +6,42 @@
 - Android SDK with platform 37 (the app targets and runs on Android 16+)
 - For the from-source build only: Android NDK 28.2.13676358, CMake 3.22+, Ninja, Python 3
 
-## Quick build (prebuilt Moonshine from Maven Central)
+## Quick build
 
 ```sh
 ./gradlew assembleDebug
 ./gradlew testDebugUnitTest
 ```
 
-This uses `ai.moonshine:moonshine-voice` (MIT) from Maven Central. That AAR contains prebuilt
-native libraries (Moonshine's C++ core and a minimal ONNX Runtime 1.23.2), which is fine for
-development and most distribution channels, but F-Droid builds everything from source.
+This uses `ai.moonshine:moonshine-voice` (MIT) from Maven Central, and Distillery's own build of
+ONNX Runtime 1.23.2, which Gradle downloads from this repository's releases and checks against the
+SHA-256 sums in `third_party/onnxruntime/libraries.properties`.
+
+## ONNX Runtime
+
+Moonshine's AAR carries an ONNX Runtime cut down to the operators of Moonshine's own models, and
+its 0.1.5 build lacks some that Kokoro needs. Distillery replaces it with ONNX Runtime 1.23.2 (the
+version Moonshine's library is linked against) built from source with only the operators
+Distillery's models use. `.github/workflows/onnxruntime.yml` does all of it:
+
+1. `tools/onnxruntime/generate-ops-config.py` reads every model the app can load (the three English
+   streaming speech models, Kokoro, the pronunciation stand-in and Moonshine's built-in voice
+   detector) and writes `third_party/onnxruntime/distillery-operators.config`.
+2. `tools/onnxruntime/build.sh` builds a minimal ONNX Runtime with only those operators for
+   Android arm64-v8a and x86_64, and for Linux.
+3. `tools/onnxruntime/smoke-test.py` runs every model on the Linux build through Moonshine's own
+   library, so a missing operator fails there rather than on a phone.
+4. The Android libraries are published as an `onnxruntime-…` release, and their checksums are
+   committed to `third_party/onnxruntime/libraries.properties`.
+
+To build the libraries yourself (Android NDK 28.2.13676358, CMake 3.28+, Python 3 with
+`flatbuffers`; ONNX Runtime 1.23 doesn't build with Ubuntu 26.04's GCC):
+
+```sh
+tools/onnxruntime/build.sh android-arm64-v8a ort/arm64-v8a
+tools/onnxruntime/build.sh android-x86_64 ort/x86_64      # only for debug builds
+./gradlew assembleRelease -Pdistillery.ortDir=ort
+```
 
 ## From-source build (F-Droid, reproducible builds)
 
@@ -27,21 +53,13 @@ Settings include Moonshine's Android binding as a composite build when
 git submodule add https://github.com/moonshine-ai/moonshine third_party/moonshine
 git -C third_party/moonshine checkout v0.1.5
 
-# 2. Remove the vendored ONNX Runtime binaries and rebuild them from source.
-#    The script clones onnxruntime v1.23.2 into $MOONSHINE_ORT_ROOT and builds a
-#    minimal, operator-reduced library for each ABI.
-rm -rf third_party/moonshine/core/third-party/onnxruntime/lib/android/*/libonnxruntime.so
-export ANDROID_SDK_ROOT=/path/to/sdk
-export MOONSHINE_ORT_ROOT="$PWD/build/ort"
-# Release APKs are arm64-v8a only; add x86_64 to also build a debug APK for the emulator.
-third_party/moonshine/scripts/build-ort-android.sh force arm64-v8a
+# 2. Distillery's ONNX Runtime, from source (see above)
+export ANDROID_HOME=/path/to/sdk
+tools/onnxruntime/build.sh android-arm64-v8a ort/arm64-v8a
 
-# 3. Build the app against the source checkout
-./gradlew assembleRelease -Pdistillery.moonshineSource=third_party/moonshine
+# 3. Build the app against both
+./gradlew assembleRelease -Pdistillery.moonshineSource=third_party/moonshine -Pdistillery.ortDir=ort
 ```
-
-The rebuilt ONNX Runtime libraries must stay on the ORT version in
-`third_party/moonshine/scripts/ort-build-common.sh`, since Moonshine vendors that version's headers.
 
 `docs/fdroid/app.distillery.stt.yml` is a starting point for the fdroiddata recipe. Expect
 the F-Droid reviewers to adjust it (for example, to move the ONNX Runtime checkout into a srclib).

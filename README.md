@@ -206,7 +206,7 @@ those lexicons by `tools/train-word-guesser.py`. Words with several readings ("r
 by `tools/train-pos-tagger.py` on the Universal Dependencies English Web
 Treebank; the model is CC BY-SA 4.0. Built-in fixes live in
 `app/src/main/assets/tts/pronunciations.tsv`, and users can add their own under
-Voices › Pronunciations.
+Text to speech › Pronunciations.
 
 None of Moonshine's English pronunciation data is used: Moonshine hasn't
 stated its license. Moonshine's engine needs files at those paths to start, so
@@ -215,8 +215,9 @@ downloads the originals. Everything text to speech uses is open source.
 
 Voice cloning isn't offered: the cloning model was trained on non-commercial
 data, and `TtsLicensePolicy` refuses its files. Kokoro needs operators that
-Moonshine's cut-down ONNX Runtime lacks, so Distillery packages the full ONNX
-Runtime of the same version.
+Moonshine's cut-down ONNX Runtime lacks, so Distillery builds its own from
+source: the same version, with only the operators its models use (see
+[docs/BUILDING.md](docs/BUILDING.md#onnx-runtime)).
 
 ## Building
 
