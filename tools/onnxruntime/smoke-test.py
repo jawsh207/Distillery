@@ -89,7 +89,9 @@ def main():
         target = root / path
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(REPO / "app/src/main/assets/tts/standin" / name, target)
-    for voice in ("af_heart", "bf_emma"):
+    # Every voice runs on the same Kokoro model. (British voices work under en_us in
+    # the app, but the Python package checks voices against en_us's own list first.)
+    for voice in ("af_heart", "am_adam"):
         try:
             tts = TextToSpeech().language("en_us").voice(f"kokoro_{voice}").models_from(root, download=True)
             tts.load()
