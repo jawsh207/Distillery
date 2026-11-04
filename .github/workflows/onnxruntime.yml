@@ -64,7 +64,8 @@ jobs:
 
   build:
     needs: config
-    runs-on: ubuntu-latest
+    # ONNX Runtime 1.23's source doesn't build with Ubuntu 26.04's compiler.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -96,7 +97,7 @@ jobs:
         run: |
           set -o pipefail
           tools/onnxruntime/build.sh "${{ matrix.target }}" out > build.log 2>&1 \
-            || { tail -80 build.log; echo "::error title=Build ${{ matrix.target }}::$(grep -v Namespace build.log | grep -E 'error|Error' | tail -5 | tr '\n' '|')"; exit 1; }
+            || { grep -n -B3 -A12 -E ' error:|error: |FAILED:' build.log | head -150; tail -30 build.log; echo "::error title=Build ${{ matrix.target }}::$(grep -v Namespace build.log | grep -E 'error|Error' | tail -5 | tr '\n' '|')"; exit 1; }
           tail -5 build.log
       - name: Size
         run: echo "::notice title=${{ matrix.target }}::$(stat -c %s out/libonnxruntime.so) bytes"
