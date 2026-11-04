@@ -150,7 +150,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="onnxruntime-$ORT_VERSION-${{ needs.config.outputs.hash }}"
-          mkdir dist
+          mkdir -p dist third_party/onnxruntime
           cp artifacts/ort-android-arm64-v8a/libonnxruntime.so dist/libonnxruntime-arm64-v8a.so
           cp artifacts/ort-android-x86_64/libonnxruntime.so dist/libonnxruntime-x86_64.so
           cp artifacts/operators/distillery-operators.config dist/

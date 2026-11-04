@@ -1,3 +1,5 @@
+import java.net.URI
+import java.security.MessageDigest
 import java.util.Properties
 import javax.inject.Inject
 
@@ -162,7 +164,7 @@ abstract class FetchDistilleryOrt : OrtJniTask() {
             val target = outputDir.file("$abi/libonnxruntime.so").get().asFile
             if (target.isFile && sha256(target.readBytes()) == expected) continue
             val url = "${baseUrl.get()}/libonnxruntime-$abi.so"
-            val bytes = java.net.URI(url).toURL().openStream().use { it.readBytes() }
+            val bytes = URI(url).toURL().openStream().use { it.readBytes() }
             val actual = sha256(bytes)
             if (actual != expected) throw GradleException("$url has SHA-256 $actual, expected $expected")
             target.parentFile.mkdirs()
@@ -171,7 +173,7 @@ abstract class FetchDistilleryOrt : OrtJniTask() {
     }
 
     private fun sha256(bytes: ByteArray) =
-        java.security.MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+        MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
 }
 
 @Suppress("UNCHECKED_CAST")
