@@ -18,8 +18,8 @@ android {
         applicationId = "app.distillery.stt"
         minSdk = 36
         targetSdk = 36
-        versionCode = 10
-        versionName = "0.2.1"
+        versionCode = 11
+        versionName = "0.2.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = false

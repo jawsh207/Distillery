@@ -1,0 +1,4 @@
+A much smaller app: 20 MB instead of 48 MB, with nothing taken away.
+- Distillery now builds its own ONNX Runtime from source, with only what its models use.
+- Pronunciation data for text to speech downloads with the first voice of each accent (about 5 MB), instead of being in the app. After updating, voices you already have fetch it once.
+- Smaller word guessers, with the same pronunciations.
