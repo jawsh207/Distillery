@@ -31,11 +31,21 @@ def use_runtime(runtime):
     import moonshine_voice
 
     package = pathlib.Path(moonshine_voice.__file__).parent
-    bundled = [p for p in package.rglob("libonnxruntime.so*") if p.is_file() and not p.is_symlink()]
+    # Wheels repaired by auditwheel keep shared libraries in moonshine_voice.libs/.
+    places = [package] + sorted(package.parent.glob("moonshine_voice*.libs"))
+    bundled = [
+        p for place in places for p in place.rglob("libonnxruntime*.so*")
+        if p.is_file() and not p.is_symlink()
+    ]
     if not bundled:
-        raise SystemExit(f"No libonnxruntime.so in {package}")
+        import subprocess
+
+        for lib in package.rglob("libmoonshine*.so*"):
+            print(subprocess.run(["readelf", "-d", str(lib)], capture_output=True, text=True).stdout)
+        listing = "\n".join(str(p.relative_to(package.parent)) for place in places for p in place.rglob("*.so*"))
+        raise SystemExit(f"No libonnxruntime in {places}; shared libraries:\n{listing}")
     for p in bundled:
-        print(f"replacing {p.relative_to(package)} ({p.stat().st_size // 1024} KB)")
+        print(f"replacing {p.relative_to(package.parent)} ({p.stat().st_size // 1024} KB)")
         shutil.copyfile(runtime, p)
 
 
