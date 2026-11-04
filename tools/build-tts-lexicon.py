@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 misaki = Path(sys.argv[1])
-out_dir = Path(__file__).resolve().parent.parent / "app/src/main/assets/tts"
+out_dir = Path(__file__).resolve().parent.parent / "tts-data"
 out_dir.mkdir(parents=True, exist_ok=True)
 
 for accent in ("us", "gb"):

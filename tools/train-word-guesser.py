@@ -12,7 +12,7 @@ Letter-to-sound in two steps, all in plain Python:
    left to right, from the letters around it and the phonemes it just chose.
 
 The result is written, packed (perceptron_pack.py), to
-app/src/main/assets/tts/guesser-<accent>.bin.gzip.
+tts-data/guesser-<accent>.bin.gzip.
 WordGuesser.kt reads it and must compute exactly the same features as
 `features()` here.
 
@@ -295,7 +295,7 @@ def main():
         total += len(units(truth))
     print(f"held-out words: {right / len(test):.3f} exactly right, phoneme error rate {errs / total:.3f}")
 
-    out = Path(__file__).resolve().parent.parent / f"app/src/main/assets/tts/guesser-{accent}.bin.gzip"
+    out = Path(__file__).resolve().parent.parent / f"tts-data/guesser-{accent}.bin.gzip"
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from perceptron_pack import pack
     pack(classes, {}, model.w, out)

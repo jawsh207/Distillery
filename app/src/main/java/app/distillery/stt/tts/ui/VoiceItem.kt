@@ -47,8 +47,8 @@ private const val PREVIEW_TEXT = "Hello! This is how I sound when Distillery rea
 /** What the Downloads tab says about voices, above their cards. */
 fun voicesIntro(installedCount: Int): String =
     if (installedCount == 0) {
-        "Your first voice also downloads the Kokoro model and English pronunciation data (roughly 90 MB). " +
-            "Each voice after that is small. Everything runs on your phone."
+        "Your first voice also downloads the Kokoro model (roughly 90 MB) and Distillery's pronunciation data " +
+            "for its accent (about 5 MB). Each voice after that is small. Everything runs on your phone."
     } else {
         "The voice marked with a check is the one apps get when they don't choose one. " +
             "Your first voice also brought the Kokoro model, which is deleted with your last voice."

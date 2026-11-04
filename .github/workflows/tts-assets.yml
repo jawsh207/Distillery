@@ -52,7 +52,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: guesser-${{ matrix.accent }}
-          path: app/src/main/assets/tts/guesser-${{ matrix.accent }}.bin.gzip
+          path: tts-data/guesser-${{ matrix.accent }}.bin.gzip
 
   commit:
     needs: [standin, guesser]
@@ -66,13 +66,14 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           pattern: guesser-*
-          path: app/src/main/assets/tts/
+          path: tts-data/
           merge-multiple: true
       - name: Commit
         run: |
+          python3 tools/tts-data.py
           git config user.name jawsh207
           git config user.email jawsh@tuta.com
-          git add app/src/main/assets/tts
+          git add app/src/main/assets/tts tts-data
           git diff --cached --quiet && { echo "No changes"; exit 0; }
           git commit -m "Text to speech: regenerate the stand-ins and word guessers"
           git push

@@ -51,6 +51,7 @@ jobs:
 
       - name: Check text to speech is in both builds
         run: |
+          python3 tools/tts-data.py --check
           APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
           DEBUG_APK=$(ls app/build/outputs/apk/debug/*.apk | head -1)
           AAPT2=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)aapt2
@@ -58,9 +59,12 @@ jobs:
             name=$(basename "$apk")
             "$AAPT2" dump xmltree --file AndroidManifest.xml "$apk" | grep -q 'TTS_SERVICE' \
               || { echo "::error title=$name::No text-to-speech engine in the manifest"; exit 1; }
-            # Pronunciation data must be in the APK under the names the code
-            # opens (the build renames *.gz assets, which once broke this).
-            for f in lexicon-us.tsv.gzip lexicon-gb.tsv.gzip heteronyms-us.tsv.gzip heteronyms-gb.tsv.gzip pos-tagger.bin.gzip guesser-us.bin.gzip guesser-gb.bin.gzip pronunciations.tsv standin/dict.tsv standin/g2p-config.json standin/model.ort standin/onnx-config.json; do
+            # Text-to-speech files must be in the APK under the names the code
+            # opens (the build renames *.gz assets, which once broke this). The
+            # pronunciation data itself is downloaded (tools/tts-data.py).
+            unzip -l "$apk" | grep -qE 'assets/tts/(lexicon|guesser|heteronyms|pos-tagger)' \
+              && { echo "::error title=$name::Pronunciation data belongs in tts-data/, not the APK"; exit 1; }
+            for f in data.properties pronunciations.tsv standin/dict.tsv standin/g2p-config.json standin/model.ort standin/onnx-config.json; do
               unzip -l "$apk" | grep -q "assets/tts/$f\$" \
                 || { echo "::error title=$name::assets/tts/$f is missing"; exit 1; }
             done

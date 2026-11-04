@@ -8,6 +8,7 @@ import app.distillery.stt.engine.ModelStore
 import app.distillery.stt.engine.SpeechEngine
 import app.distillery.stt.engine.DistillerySettings
 import app.distillery.stt.service.OffensiveWords
+import app.distillery.stt.tts.TtsRuntime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import java.io.File
 
 /** Process-wide singletons shared by the UI, the recognition service and the download worker. */
@@ -50,6 +52,11 @@ class DistilleryApplication : Application() {
             .getWorkInfosByTagFlow(ModelDownloads.TAG)
             .map { infos -> infos.any { !it.state.isFinished } }
             .stateIn(appScope, SharingStarted.Eagerly, false)
+
+        appScope.launch(Dispatchers.IO) {
+            val tts = TtsRuntime.get(this@DistilleryApplication)
+            tts.downloads.repair(tts.store)
+        }
     }
 
     fun isAnyModelDownloading(): Boolean = anyDownloadActive.value

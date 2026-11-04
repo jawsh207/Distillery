@@ -69,8 +69,10 @@ the F-Droid reviewers to adjust it (for example, to move the ONNX Runtime checko
 - No proprietary dependencies: AndroidX, Jetpack Compose, Kotlin, OkHttp and Moonshine are all
   Apache-2.0 or MIT. There are no Google Play Services, Firebase or analytics.
 - `dependenciesInfo` is disabled, so the APK carries no Google-signed dependency blob.
-- The app downloads MIT-licensed speech models from `download.moonshine.ai` when the user asks.
-  Recognition itself never uses the network.
+- The app downloads MIT-licensed speech models and Kokoro voices from `download.moonshine.ai`
+  when the user asks, and with the first voice of each accent, Distillery's own pronunciation data
+  (`tts-data/`) from this repository's GitHub releases, checked against
+  `app/src/main/assets/tts/data.properties`. Recognition and speech never use the network.
 - Version code and name live in `app/build.gradle.kts`; store text is in `fastlane/metadata/`.
 
 ## Material 3 version

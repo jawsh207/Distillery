@@ -52,6 +52,18 @@ class VoiceDownloads(context: Context) {
         workManager.enqueueUniqueWork(workName(voice), ExistingWorkPolicy.KEEP, request)
     }
 
+    /**
+     * Fetches the pronunciation data voices on [store] are missing: after an
+     * update from a version that carried it in the APK, or one that changed it.
+     * Moonshine's files are already there, so only Distillery's data downloads.
+     */
+    fun repair(store: VoiceStore) {
+        KokoroVoice.entries
+            .filter { store.hasVoiceFiles(it) && !store.isInstalled(it) }
+            .distinctBy { it.accent }
+            .forEach(::start)
+    }
+
     fun cancel(voice: KokoroVoice) {
         workManager.cancelUniqueWork(workName(voice))
     }
@@ -103,7 +115,8 @@ class VoiceDownloadWorker(
             Log.w(TAG, "Running voice download without a foreground notification", e)
         }
 
-        val store = TtsRuntime.get(applicationContext).store
+        val runtime = TtsRuntime.get(applicationContext)
+        val store = runtime.store
         val root = store.root
         return try {
             runInterruptible(Dispatchers.IO) {
@@ -141,6 +154,21 @@ class VoiceDownloadWorker(
                 if (!StandIns.verify(root, applicationContext.assets)) {
                     throw TtsPolicyException("Unexpected files under en_us/; only Distillery's stand-ins belong there")
                 }
+                // Distillery's own pronunciation data for this accent, from its releases.
+                runtime.data.download(voice.accent) { done, total ->
+                    val now = SystemClock.elapsedRealtime()
+                    if (now - lastReport < PROGRESS_INTERVAL_MS) return@download
+                    lastReport = now
+                    val fraction = if (total > 0) done.toFloat() / total else -1f
+                    setProgressAsync(
+                        workDataOf(
+                            PROGRESS_FRACTION to fraction,
+                            PROGRESS_BYTES_DONE to done,
+                            PROGRESS_BYTES_TOTAL to total,
+                        ),
+                    )
+                    runCatching { setForegroundAsync(foregroundInfo(voice, fraction, pronunciation = true)) }
+                }
                 store.markComplete(voice, files)
             }
             Result.success()
@@ -163,11 +191,11 @@ class VoiceDownloadWorker(
         return foregroundInfo(voice, null)
     }
 
-    private fun foregroundInfo(voice: KokoroVoice, fraction: Float?): ForegroundInfo = ForegroundInfo(
+    private fun foregroundInfo(voice: KokoroVoice, fraction: Float?, pronunciation: Boolean = false) = ForegroundInfo(
         Notifications.ID_DOWNLOAD,
         Notifications.downloadProgress(
             applicationContext,
-            "Downloading the ${voice.displayName} voice",
+            if (pronunciation) "Downloading ${voice.accent.label} pronunciations" else "Downloading the ${voice.displayName} voice",
             fraction,
             cancelIntent = WorkManager.getInstance(applicationContext).createCancelPendingIntent(id),
         ),

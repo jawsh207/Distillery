@@ -24,6 +24,8 @@ class VoiceNotInstalledException(voice: KokoroVoice) : IllegalStateException("${
 class KokoroSynth(
     context: Context,
     private val store: VoiceStore,
+    /** The downloaded lexicons, guessers and tagger. */
+    private val data: PronunciationData,
     /** Custom pronunciations, word (lower case) → "sounds like" respelling. */
     private val customPronunciations: () -> Map<String, String> = { emptyMap() },
 ) {
@@ -130,8 +132,8 @@ class KokoroSynth(
         val started = SystemClock.elapsedRealtime()
         try {
             val suffix = if (british) "gb" else "us"
-            val heteronyms = appContext.assets.open("tts/heteronyms-$suffix.tsv.gzip").use { Lexicon.loadHeteronyms(it) }
-            val lexicon = appContext.assets.open("tts/lexicon-$suffix.tsv.gzip").use {
+            val heteronyms = data.open("heteronyms-$suffix.tsv.gzip").use { Lexicon.loadHeteronyms(it) }
+            val lexicon = data.open("lexicon-$suffix.tsv.gzip").use {
                 Lexicon.load(it, british, heteronyms)
             }
             TtsLog.add("Lexicon: ${lexicon.size} words in ${SystemClock.elapsedRealtime() - started} ms")
@@ -144,7 +146,7 @@ class KokoroSynth(
     /** The part-of-speech tagger, or null if it can't load (then heteronyms get their usual reading). */
     private fun loadTagger(): PosTagger? = try {
         val started = SystemClock.elapsedRealtime()
-        appContext.assets.open("tts/pos-tagger.bin.gzip").use { PosTagger.load(it) }
+        data.open(PronunciationData.TAGGER).use { PosTagger.load(it) }
             .also { TtsLog.add("Part-of-speech tagger loaded in ${SystemClock.elapsedRealtime() - started} ms") }
     } catch (e: Exception) {
         TtsLog.error("Couldn't load the part-of-speech tagger", e)
@@ -156,7 +158,7 @@ class KokoroSynth(
         val guesser = guessers.getOrPut(accent) {
             val name = if (accent == Accent.BRITISH) "gb" else "us"
             val started = SystemClock.elapsedRealtime()
-            runCatching { appContext.assets.open("tts/guesser-$name.bin.gzip").use { WordGuesser.load(it) } }
+            runCatching { data.open("guesser-$name.bin.gzip").use { WordGuesser.load(it) } }
                 .onSuccess { TtsLog.add("Word guesser loaded in ${SystemClock.elapsedRealtime() - started} ms") }
                 .onFailure { TtsLog.error("Couldn't load the word guesser", it) }
         }

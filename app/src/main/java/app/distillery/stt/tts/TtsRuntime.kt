@@ -6,11 +6,13 @@ import java.io.File
 
 /** Text-to-speech singletons shared by the TTS service, the download worker and the UI. */
 class TtsRuntime private constructor(context: Context) {
-    val store = VoiceStore(File(context.noBackupFilesDir, "tts"))
+    private val root = File(context.noBackupFilesDir, "tts")
+    val data = PronunciationData(root, PronunciationData.Manifest.load(context.assets))
+    val store = VoiceStore(root, data)
     val settings = TtsSettings(context)
     val downloads = VoiceDownloads(context)
     val pronunciations = PronunciationStore(context)
-    val synth = KokoroSynth(context, store) { pronunciations.all() }
+    val synth = KokoroSynth(context, store, data) { pronunciations.all() }
 
     companion object {
         @Volatile private var instance: TtsRuntime? = null

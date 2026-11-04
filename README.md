@@ -204,8 +204,11 @@ Words not in them are guessed by Distillery's own letter-to-sound model, trained
 those lexicons by `tools/train-word-guesser.py`. Words with several readings ("read",
 "record", "present") are told apart by a small part-of-speech tagger trained
 by `tools/train-pos-tagger.py` on the Universal Dependencies English Web
-Treebank; the model is CC BY-SA 4.0. Built-in fixes live in
-`app/src/main/assets/tts/pronunciations.tsv`, and users can add their own under
+Treebank; the model is CC BY-SA 4.0. The lexicons, guessers and tagger
+aren't in the APK: they live in `tts-data/`, are published as a release, and
+download with the first voice of each accent, checked against the SHA-256 sums
+in `app/src/main/assets/tts/data.properties` (`tools/tts-data.py`). Built-in
+fixes live in `app/src/main/assets/tts/pronunciations.tsv`, and users can add their own under
 Text to speech › Pronunciations.
 
 None of Moonshine's English pronunciation data is used: Moonshine hasn't

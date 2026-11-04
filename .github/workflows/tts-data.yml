@@ -1,0 +1,36 @@
+name: Pronunciation data
+
+# Publishes tts-data/ (lexicons, heteronym lists, word guessers and the
+# part-of-speech tagger) as a GitHub release, which the app downloads with the
+# first voice of each accent. The tag and checksums the app expects are in
+# app/src/main/assets/tts/data.properties (tools/tts-data.py).
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - tts-data/**
+      - app/src/main/assets/tts/data.properties
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check the manifest
+        run: python3 tools/tts-data.py --check
+      - name: Release the data
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=$(grep '^tag=' app/src/main/assets/tts/data.properties | cut -d= -f2)
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "$TAG is already published"
+            exit 0
+          fi
+          gh release create "$TAG" tts-data/* --target "$GITHUB_SHA" --prerelease --latest=false \
+            --title "Pronunciation data ($TAG)" \
+            --notes "Distillery's English pronunciation data, downloaded by the app with the first voice of each accent and checked against app/src/main/assets/tts/data.properties. The lexicons and word guessers are made from misaki's lexicons (Apache-2.0); the part-of-speech tagger is trained on the Universal Dependencies English Web Treebank (CC BY-SA 4.0)."

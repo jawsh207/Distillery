@@ -12,17 +12,21 @@ import java.io.File
  * model and pronunciation data; each adds only its own voice file.
  *
  * A voice counts as installed once its download finished and wrote a marker
- * listing the files it needs, so deleting one voice removes only the files no
- * other installed voice uses.
+ * listing the files it needs, and its accent's pronunciation data ([data]) is
+ * here too, so deleting one voice removes only the files no other installed
+ * voice uses.
  */
-class VoiceStore(val root: File) {
+class VoiceStore(val root: File, private val data: PronunciationData? = null) {
 
     private val markers = File(root, ".distillery-voices")
     private val _installed = MutableStateFlow(scan())
 
     val installed: StateFlow<Set<KokoroVoice>> = _installed.asStateFlow()
 
-    fun isInstalled(voice: KokoroVoice): Boolean = marker(voice).isFile
+    fun isInstalled(voice: KokoroVoice): Boolean = hasVoiceFiles(voice) && data?.isPresent(voice.accent) != false
+
+    /** Moonshine's files for [voice] are here, whether or not its pronunciation data is. */
+    fun hasVoiceFiles(voice: KokoroVoice): Boolean = marker(voice).isFile
 
     fun markComplete(voice: KokoroVoice, files: List<String>) {
         markers.mkdirs()
@@ -34,12 +38,13 @@ class VoiceStore(val root: File) {
     fun delete(voice: KokoroVoice) {
         val mine = filesOf(voice)
         marker(voice).delete()
-        val remaining = KokoroVoice.entries.filter { isInstalled(it) }
+        val remaining = KokoroVoice.entries.filter { hasVoiceFiles(it) }
         if (remaining.isEmpty()) {
             root.deleteRecursively()
         } else {
             val stillUsed = remaining.flatMap { filesOf(it) }.toSet()
             mine.filter { it !in stillUsed }.forEach { File(root, it).delete() }
+            if (remaining.none { it.accent == voice.accent }) data?.deleteFor(voice.accent, last = false)
         }
         refresh()
     }
