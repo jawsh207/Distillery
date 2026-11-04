@@ -75,7 +75,9 @@ def fetch(url, cache):
         target.parent.mkdir(parents=True, exist_ok=True)
         print(f"  fetching {url}", flush=True)
         partial = target.with_suffix(".partial")
-        with urllib.request.urlopen(url) as response, open(partial, "wb") as out:
+        # The CDN turns away Python's default user agent.
+        request = urllib.request.Request(url, headers={"User-Agent": "distillery-build"})
+        with urllib.request.urlopen(request) as response, open(partial, "wb") as out:
             while chunk := response.read(1 << 20):
                 out.write(chunk)
         partial.rename(target)
