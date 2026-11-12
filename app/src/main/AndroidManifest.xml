@@ -107,7 +107,8 @@
             </intent-filter>
         </activity>
 
-        <!-- Transcribe: audio and video files shared to Distillery or opened with it. -->
+        <!-- Transcribe: audio and video files shared to Distillery. Not offered
+             for opening files: people already have a player for those. -->
         <activity
             android:name=".transcribe.TranscribeActivity"
             android:exported="true"
@@ -118,12 +119,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="audio/*" />
                 <data android:mimeType="video/*" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="content" />
-                <data android:mimeType="audio/*" />
             </intent-filter>
         </activity>
 

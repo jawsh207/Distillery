@@ -143,29 +143,15 @@ fun SpeechToTextTab(
         }
 
         // ---------------------------------------------------------- microphone
-        item {
-            SectionCard(
-                title = "Microphone",
-                icon = R.drawable.ic_mic,
-                tone = if (micGranted) Tone.Good else Tone.Action,
-            ) {
-                if (micGranted) {
-                    BodyText("Allowed. Distillery records only while an app is asking for voice input, and the audio never leaves your phone.")
-                } else {
-                    BodyText("Distillery records on behalf of the app or keyboard that asks for voice input, so it needs microphone access too.")
-                }
+        // Only until it's allowed; nothing to do after that.
+        if (!micGranted) item(key = "mic") {
+            SectionCard(title = "Microphone", icon = R.drawable.ic_mic, tone = Tone.Action) {
+                BodyText("Distillery records on behalf of the app or keyboard that asks for voice input, so it needs microphone access too.")
                 Button(
                     onClick = { micLauncher.launch(Manifest.permission.RECORD_AUDIO) },
-                    enabled = !micGranted,
                     shapes = ButtonDefaults.shapes(),
-                ) {
-                    Text(if (micGranted) "Microphone allowed" else "Allow microphone")
-                }
-                if (!micGranted) {
-                    TextButton(onClick = { VoiceInputSetup.openAppSettings(context) }) {
-                        Text("Open app settings")
-                    }
-                }
+                ) { Text("Allow microphone") }
+                TextButton(onClick = { VoiceInputSetup.openAppSettings(context) }) { Text("Open app settings") }
             }
         }
 
@@ -190,8 +176,9 @@ fun SpeechToTextTab(
         }
 
         // ------------------------------------------------------- default input
-        item {
-            DefaultVoiceInputCard(isDefault = isDefault, context = context)
+        // Only until Distillery is the voice input.
+        if (!isDefault) item(key = "default-input") {
+            DefaultVoiceInputCard(isDefault = false, context = context)
         }
 
         // ------------------------------------------------------------ dictation

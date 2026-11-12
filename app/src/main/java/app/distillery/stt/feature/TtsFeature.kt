@@ -175,44 +175,25 @@ fun TextToSpeechTab(onOpenDownloads: () -> Unit, onNavigate: (String) -> Unit, o
         }
 
         // ------------------------------------------------------ preferred engine
-        item(key = "tts-engine") {
-            SectionCard(
-                title = "Preferred engine",
-                icon = if (isDefaultEngine) R.drawable.ic_check_circle else R.drawable.ic_info,
-                tone = if (isDefaultEngine) Tone.Good else Tone.Action,
-            ) {
-                if (isDefaultEngine) {
-                    BodyText("Distillery is your phone's text-to-speech engine. Apps that read aloud now use it.")
-                } else {
-                    BodyText("Make Distillery the text-to-speech engine so apps that read aloud use it:")
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf(
-                            "Tap Open text-to-speech settings.",
-                            "Tap Preferred engine and choose “Distillery (Kokoro, on-device)”.",
-                            "Come back here; this card shows a check.",
-                        ).forEachIndexed { i, step ->
-                            Row {
-                                Text("${i + 1}", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(end = 10.dp, top = 2.dp))
-                                BodyText(step)
-                            }
+        // Only until Distillery is the preferred engine.
+        if (!isDefaultEngine) item(key = "tts-engine") {
+            SectionCard(title = "Preferred engine", icon = R.drawable.ic_info, tone = Tone.Action) {
+                BodyText("Make Distillery the text-to-speech engine so apps that read aloud use it:")
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf(
+                        "Tap Open text-to-speech settings.",
+                        "Tap Preferred engine and choose “Distillery (Kokoro, on-device)”.",
+                        "Come back here; this card goes away.",
+                    ).forEachIndexed { i, step ->
+                        Row {
+                            Text("${i + 1}", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(end = 10.dp, top = 2.dp))
+                            BodyText(step)
                         }
                     }
                 }
-                Button(
-                    onClick = { openTtsSettings(context) },
-                    enabled = !isDefaultEngine,
-                    shapes = ButtonDefaults.shapes(),
-                ) {
-                    if (!isDefaultEngine) {
-                        Icon(painterResource(R.drawable.ic_open_in_new), contentDescription = null, modifier = Modifier.size(18.dp))
-                    }
-                    Text(
-                        if (isDefaultEngine) "Distillery is the preferred engine" else "Open text-to-speech settings",
-                        modifier = if (isDefaultEngine) Modifier else Modifier.padding(start = 8.dp),
-                    )
-                }
-                if (isDefaultEngine) {
-                    TextButton(onClick = { openTtsSettings(context) }) { Text("Speech rate and pitch") }
+                Button(onClick = { openTtsSettings(context) }, shapes = ButtonDefaults.shapes()) {
+                    Icon(painterResource(R.drawable.ic_open_in_new), contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text("Open text-to-speech settings", modifier = Modifier.padding(start = 8.dp))
                 }
             }
         }
@@ -237,6 +218,14 @@ fun TextToSpeechTab(onOpenDownloads: () -> Unit, onNavigate: (String) -> Unit, o
                     "Speak through Android, the way apps call Distillery",
                     R.drawable.ic_volume_up,
                 ) { onNavigate(TtsFeature.TEST_ROUTE) }
+                if (isDefaultEngine) {
+                    HorizontalDivider(Modifier.padding(horizontal = 20.dp))
+                    NavRow(
+                        "Speech rate and pitch",
+                        "Android's text-to-speech settings, where Distillery is the preferred engine",
+                        R.drawable.ic_open_in_new,
+                    ) { openTtsSettings(context) }
+                }
             }
         }
     }

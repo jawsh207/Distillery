@@ -35,6 +35,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,7 +62,7 @@ import app.distillery.stt.ui.theme.DistilleryTheme
 
 /**
  * Turns an audio or video file into text. Reached by sharing a file to
- * Distillery, by opening one with it, or from the Speech to text tab.
+ * Distillery, or from the Speech to text tab.
  */
 class TranscribeActivity : ComponentActivity() {
 
@@ -73,7 +74,7 @@ class TranscribeActivity : ComponentActivity() {
         if (savedInstanceState == null) shared = sharedFile(intent)
         setContent {
             DistilleryTheme {
-                TranscribeScreen(initial = shared, onBack = ::finish)
+                TranscribeScreen(initial = shared, onDiscard = { shared = null }, onBack = ::finish)
             }
         }
     }
@@ -94,11 +95,8 @@ class TranscribeActivity : ComponentActivity() {
         super.onStop()
     }
 
-    private fun sharedFile(intent: Intent?): Uri? = when (intent?.action) {
-        Intent.ACTION_SEND -> intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
-        Intent.ACTION_VIEW -> intent.data
-        else -> null
-    }
+    private fun sharedFile(intent: Intent?): Uri? =
+        if (intent?.action == Intent.ACTION_SEND) intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java) else null
 
     companion object {
         /** Whether this screen is showing, so a finished transcript only notifies otherwise. */
@@ -109,7 +107,7 @@ class TranscribeActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class)
 @Composable
-private fun TranscribeScreen(initial: Uri?, onBack: () -> Unit) {
+private fun TranscribeScreen(initial: Uri?, onDiscard: () -> Unit, onBack: () -> Unit) {
     val context = LocalContext.current
     val app = context.applicationContext as DistilleryApplication
     val state by FileTranscription.state.collectAsStateWithLifecycle()
@@ -130,6 +128,23 @@ private fun TranscribeScreen(initial: Uri?, onBack: () -> Unit) {
         }
     }
     val choose = { pick.launch(arrayOf("audio/*", "video/*")) }
+    val discard = {
+        FileTranscription.clear()
+        picked = null
+        onDiscard()
+    }
+
+    // A newly shared file replaces whatever was on screen.
+    LaunchedEffect(initial) {
+        if (initial == null) return@LaunchedEffect
+        if (FileTranscription.state.value is FileTranscription.State.Running) {
+            Toast.makeText(context, "Finish or cancel the current transcription first", Toast.LENGTH_LONG).show()
+            onDiscard()
+        } else {
+            FileTranscription.clear()
+            picked = null
+        }
+    }
 
     DistilleryScreen(title = "Transcribe", subtitle = "Audio and video files, on your phone", onBack = onBack) {
         if (installed.isEmpty()) {
@@ -175,6 +190,7 @@ private fun TranscribeScreen(initial: Uri?, onBack: () -> Unit) {
                         )
                         if (text.isEmpty()) {
                             BodyText("No speech was found in this file.")
+                            TextButton(onClick = discard) { Text("Discard") }
                         } else {
                             SelectionContainer {
                                 Text(text, style = MaterialTheme.typography.bodyLarge)
@@ -183,7 +199,7 @@ private fun TranscribeScreen(initial: Uri?, onBack: () -> Unit) {
                                 Text("Timestamps", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                                 Switch(checked = timestamps, onCheckedChange = { timestamps = it })
                             }
-                            TranscriptActions(name = s.name, text = text)
+                            TranscriptActions(name = s.name, text = text, onDiscard = discard)
                         }
                     }
                 }
@@ -195,9 +211,10 @@ private fun TranscribeScreen(initial: Uri?, onBack: () -> Unit) {
             is FileTranscription.State.Failed -> item(key = "failed") {
                 SectionCard("Couldn't transcribe ${s.name}", R.drawable.ic_warning, tone = Tone.Action) {
                     BodyText(s.message)
-                    Button(onClick = { FileTranscription.clear(); choose() }, shapes = ButtonDefaults.shapes()) {
+                    Button(onClick = { discard(); choose() }, shapes = ButtonDefaults.shapes()) {
                         Text("Choose another file")
                     }
+                    TextButton(onClick = discard) { Text("Discard") }
                 }
             }
 
@@ -246,7 +263,7 @@ private fun TranscribeScreen(initial: Uri?, onBack: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class)
 @Composable
-private fun TranscriptActions(name: String, text: String) {
+private fun TranscriptActions(name: String, text: String, onDiscard: () -> Unit) {
     val context = LocalContext.current
     val save = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
         if (uri != null) {
@@ -279,6 +296,10 @@ private fun TranscriptActions(name: String, text: String) {
         FilledTonalButton(onClick = { save.launch(name.substringBeforeLast('.') + ".txt") }, shapes = ButtonDefaults.shapes()) {
             Icon(painterResource(R.drawable.ic_save), contentDescription = null, modifier = Modifier.size(18.dp))
             Text("Save", modifier = Modifier.padding(start = 8.dp))
+        }
+        OutlinedButton(onClick = onDiscard, shapes = ButtonDefaults.shapes()) {
+            Icon(painterResource(R.drawable.ic_delete), contentDescription = null, modifier = Modifier.size(18.dp))
+            Text("Discard", modifier = Modifier.padding(start = 8.dp))
         }
     }
 }
