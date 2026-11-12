@@ -1,0 +1,4 @@
+New: Transcribe audio and video files. Share one to Distillery, then copy, share or save the text.
+New: Read aloud. Select text in any app and choose Read aloud, or share or paste it. Pause, skip, change voice and speed, listen with the screen off, or save it as M4A or WAV.
+Tidier tabs: setup cards hide once done, and Downloads has folding sections and voice filters.
+Distillery is now licensed under Apache 2.0.
