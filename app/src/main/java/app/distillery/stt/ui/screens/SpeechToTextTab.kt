@@ -6,6 +6,7 @@
 
 package app.distillery.stt.ui.screens
 
+import app.distillery.stt.engine.SttModel
 import android.content.Intent
 import androidx.compose.material3.HorizontalDivider
 import app.distillery.stt.transcribe.TranscribeActivity
@@ -156,21 +157,23 @@ fun SpeechToTextTab(
         }
 
         // --------------------------------------------------------------- model
-        item {
-            SectionCard(
-                title = "Speech model",
-                icon = R.drawable.ic_graphic_eq,
-                tone = if (activeModel != null) Tone.Good else Tone.Action,
-            ) {
-                if (activeModel != null) {
-                    BodyText(
-                        "Using Moonshine ${activeModel.displayName} (English, streaming, MIT). " +
-                            "${installed.size} of 3 models downloaded.",
-                    )
-                    FilledTonalButton(onClick = onOpenDownloads, shapes = ButtonDefaults.shapes()) { Text("Change model") }
-                } else {
+        // A card until a model is downloaded, then a single row.
+        if (activeModel == null) {
+            item(key = "model") {
+                SectionCard(title = "Speech model", icon = R.drawable.ic_graphic_eq, tone = Tone.Action) {
                     BodyText("Download a model to get started. It's a one-time download; recognition runs offline after that.")
                     Button(onClick = onOpenDownloads, shapes = ButtonDefaults.shapes()) { Text("Choose a model") }
+                }
+            }
+        } else {
+            item(key = "model") {
+                NavGroup {
+                    NavRow(
+                        "Speech model: ${activeModel.displayName}",
+                        "Moonshine, English · ${installed.size} of ${SttModel.entries.size} downloaded",
+                        R.drawable.ic_graphic_eq,
+                        onOpenDownloads,
+                    )
                 }
             }
         }
@@ -184,16 +187,6 @@ fun SpeechToTextTab(
         // ------------------------------------------------------------ dictation
         item {
             DictationSettingsCard(app.settings)
-        }
-
-        // ----------------------------------------------------------- recordings
-        item {
-            SectionCard(title = "Recordings", icon = R.drawable.ic_description) {
-                BodyText(
-                    "Apps can also hand Distillery an audio recording to transcribe. It's read to the end " +
-                        "and transcribed on this phone, without using the microphone.",
-                )
-            }
         }
 
         // ---------------------------------------------------------------- more

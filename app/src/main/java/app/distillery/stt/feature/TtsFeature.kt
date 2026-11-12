@@ -5,6 +5,7 @@
 
 package app.distillery.stt.feature
 
+import app.distillery.stt.tts.KokoroVoice
 import app.distillery.stt.tts.read.ReadAloudActivity
 import android.content.ActivityNotFoundException
 import android.content.ClipData
@@ -154,22 +155,24 @@ fun TextToSpeechTab(onOpenDownloads: () -> Unit, onNavigate: (String) -> Unit, o
         actions = { LicensesAction(onOpenLicenses) },
     ) {
         // --------------------------------------------------------------- voice
-        item(key = "tts-voice") {
-            SectionCard(
-                title = "Voice",
-                icon = R.drawable.ic_volume_up,
-                tone = if (voice != null) Tone.Good else Tone.Action,
-            ) {
-                if (voice != null) {
-                    BodyText(
-                        "Apps that don't choose a voice get ${voice.displayName} (${voice.accent.label}, " +
-                            "${voice.gender.label.lowercase(Locale.US)}). " +
-                            "${installed.size} voice${if (installed.size == 1) "" else "s"} downloaded.",
-                    )
-                    FilledTonalButton(onClick = onOpenDownloads, shapes = ButtonDefaults.shapes()) { Text("Change voice") }
-                } else {
+        // A card until a voice is downloaded, then a single row.
+        if (voice == null) {
+            item(key = "tts-voice") {
+                SectionCard(title = "Voice", icon = R.drawable.ic_volume_up, tone = Tone.Action) {
                     BodyText("Download an English voice to get started. Speech is made on your phone, with no internet needed after that.")
                     Button(onClick = onOpenDownloads, shapes = ButtonDefaults.shapes()) { Text("Choose a voice") }
+                }
+            }
+        } else {
+            item(key = "tts-voice") {
+                NavGroup {
+                    NavRow(
+                        "Voice: ${voice.displayName}",
+                        "${voice.accent.label}, ${voice.gender.label.lowercase(Locale.US)} · " +
+                            "${installed.size} of ${KokoroVoice.entries.size} downloaded",
+                        R.drawable.ic_volume_up,
+                        onOpenDownloads,
+                    )
                 }
             }
         }

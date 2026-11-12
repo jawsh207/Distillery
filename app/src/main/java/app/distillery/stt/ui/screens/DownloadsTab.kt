@@ -9,9 +9,11 @@ import android.text.format.Formatter
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -83,28 +85,40 @@ fun DownloadsTab(onOpenLicenses: () -> Unit) {
         subtitle = "Speech models and voices",
         actions = { LicensesAction(onOpenLicenses) },
     ) {
-        item(key = "summary") {
-            BodyText(
-                if (models.isEmpty() && voices.isEmpty()) {
-                    "Nothing downloaded yet. Everything here downloads once and then runs entirely on your phone."
-                } else {
-                    "${Formatter.formatShortFileSize(context, modelBytes + voiceBytes)} in use: " +
-                        "${Formatter.formatShortFileSize(context, modelBytes)} for speech to text, " +
-                        "${Formatter.formatShortFileSize(context, voiceBytes)} for text to speech."
-                },
-            )
-        }
-        item(key = "wifi") {
+        // Space used and the Wi-Fi setting, together in one card.
+        item(key = "storage") {
             Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceContainer) {
+              Column {
+                ListItem(
+                    headlineContent = {
+                        Text(
+                            if (models.isEmpty() && voices.isEmpty()) "Nothing downloaded yet"
+                            else "${Formatter.formatShortFileSize(context, modelBytes + voiceBytes)} in use",
+                        )
+                    },
+                    supportingContent = {
+                        Text(
+                            if (models.isEmpty() && voices.isEmpty()) {
+                                "Everything here downloads once, then runs on your phone"
+                            } else {
+                                "${Formatter.formatShortFileSize(context, modelBytes)} speech to text · " +
+                                    "${Formatter.formatShortFileSize(context, voiceBytes)} text to speech"
+                            },
+                        )
+                    },
+                    colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                )
+                HorizontalDivider(Modifier.padding(horizontal = 20.dp))
                 ListItem(
                     headlineContent = { Text("Download over Wi-Fi only") },
-                    supportingContent = { Text("Models and voices wait for an unmetered connection") },
                     trailingContent = {
                         Switch(checked = wifiOnly, onCheckedChange = { app.settings.wifiOnlyDownloads = it })
                     },
                     colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
                 )
+              }
             }
         }
 
