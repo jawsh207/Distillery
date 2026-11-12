@@ -43,6 +43,7 @@
 
         <activity
             android:name=".ui.MainActivity"
+            android:screenOrientation="portrait"
             android:exported="true"
             android:launchMode="singleTop"
             android:windowSoftInputMode="adjustResize">
@@ -111,6 +112,7 @@
              for opening files: people already have a player for those. -->
         <activity
             android:name=".transcribe.TranscribeActivity"
+            android:screenOrientation="portrait"
             android:exported="true"
             android:label="@string/action_transcribe"
             android:launchMode="singleTop">
@@ -126,6 +128,7 @@
              shared to Distillery. -->
         <activity
             android:name=".tts.read.ReadAloudActivity"
+            android:screenOrientation="portrait"
             android:exported="true"
             android:label="@string/action_read_aloud"
             android:launchMode="singleTop"
