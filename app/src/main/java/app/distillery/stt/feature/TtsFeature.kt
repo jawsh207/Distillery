@@ -5,6 +5,7 @@
 
 package app.distillery.stt.feature
 
+import app.distillery.stt.DistilleryApplication
 import app.distillery.stt.tts.KokoroVoice
 import app.distillery.stt.tts.read.ReadAloudActivity
 import android.content.ActivityNotFoundException
@@ -148,6 +149,9 @@ fun TextToSpeechTab(onOpenDownloads: () -> Unit, onNavigate: (String) -> Unit, o
         onPauseOrDispose { }
     }
     val voice = defaultVoice.takeIf { it in installed } ?: installed.firstOrNull()
+    val app = context.applicationContext as DistilleryApplication
+    val settingsVersion by app.settings.changes.collectAsStateWithLifecycle(0)
+    val showTest = remember(settingsVersion) { app.settings.showTtsTest }
 
     DistilleryScreen(
         title = "Text to speech",
@@ -215,12 +219,15 @@ fun TextToSpeechTab(onOpenDownloads: () -> Unit, onNavigate: (String) -> Unit, o
                     "Fix how a word or name is said",
                     R.drawable.ic_description,
                 ) { onNavigate(TtsFeature.PRONUNCIATIONS_ROUTE) }
-                HorizontalDivider(Modifier.padding(horizontal = 20.dp))
-                NavRow(
-                    "Test text to speech",
-                    "Speak through Android, the way apps call Distillery",
-                    R.drawable.ic_volume_up,
-                ) { onNavigate(TtsFeature.TEST_ROUTE) }
+                // Hidden until revealed by tapping this tab's button eight times.
+                if (showTest) {
+                    HorizontalDivider(Modifier.padding(horizontal = 20.dp))
+                    NavRow(
+                        "Test text to speech",
+                        "Speak through Android, the way apps call Distillery",
+                        R.drawable.ic_volume_up,
+                    ) { onNavigate(TtsFeature.TEST_ROUTE) }
+                }
                 if (isDefaultEngine) {
                     HorizontalDivider(Modifier.padding(horizontal = 20.dp))
                     NavRow(

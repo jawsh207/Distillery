@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 package app.distillery.stt.ui
 
+import app.distillery.stt.DistilleryApplication
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.remember
+import android.widget.Toast
+import android.os.SystemClock
+import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.PaddingValues
@@ -71,6 +77,9 @@ fun MainTabs(
         if (pager.currentPage != tab.ordinal) scope.launch { pager.animateScrollToPage(tab.ordinal) }
     }
 
+    val context = LocalContext.current
+    val testTaps = remember { TestTaps(context) }
+
     LaunchedEffect(requestedTab) {
         if (requestedTab != null) {
             pager.scrollToPage(requestedTab.ordinal)
@@ -104,7 +113,7 @@ fun MainTabs(
                 tabs.forEach { tab ->
                     NavigationRailItem(
                         selected = tab == current,
-                        onClick = { select(tab) },
+                        onClick = { if (tab == current) testTaps.tap(tab) else select(tab) },
                         icon = { TabIcon(tab, tab == current) },
                         label = { Text(tab.label) },
                     )
@@ -124,7 +133,7 @@ fun MainTabs(
                     tabs.forEach { tab ->
                         ShortNavigationBarItem(
                             selected = tab == current,
-                            onClick = { select(tab) },
+                            onClick = { if (tab == current) testTaps.tap(tab) else select(tab) },
                             icon = { TabIcon(tab, tab == current) },
                             label = { Text(tab.label) },
                         )
@@ -149,4 +158,53 @@ fun MainTabs(
 private fun TabIcon(tab: MainTab, selected: Boolean) {
     // The label already names the tab, so the icon is decorative.
     Icon(painterResource(if (selected) tab.selectedIcon else tab.icon), contentDescription = null)
+}
+
+/**
+ * Tapping the selected tab's button [TAPS] times in a row shows or hides that
+ * tab's Test row, like Android's own developer options. Taps more than
+ * [GAP_MS] apart start the count again.
+ */
+private class TestTaps(private val context: Context) {
+    private var tab: MainTab? = null
+    private var count = 0
+    private var last = 0L
+    private var toast: Toast? = null
+
+    fun tap(on: MainTab) {
+        val settings = (context.applicationContext as DistilleryApplication).settings
+        val shown = when (on) {
+            MainTab.SpeechToText -> settings.showSttTest
+            MainTab.TextToSpeech -> settings.showTtsTest
+            MainTab.Downloads -> return
+        }
+        val now = SystemClock.elapsedRealtime()
+        if (on != tab || now - last > GAP_MS) count = 0
+        tab = on
+        last = now
+        count++
+        val left = TAPS - count
+        when {
+            left == 0 -> {
+                count = 0
+                when (on) {
+                    MainTab.SpeechToText -> settings.showSttTest = !shown
+                    MainTab.TextToSpeech -> settings.showTtsTest = !shown
+                    MainTab.Downloads -> Unit
+                }
+                show(if (shown) "Test hidden" else "Test is now shown at the bottom of this tab")
+            }
+            left <= 3 -> show("${if (shown) "Hide" else "Show"} Test in $left more tap${if (left == 1) "" else "s"}")
+        }
+    }
+
+    private fun show(text: String) {
+        toast?.cancel()
+        toast = Toast.makeText(context, text, Toast.LENGTH_SHORT).also { it.show() }
+    }
+
+    companion object {
+        const val TAPS = 8
+        const val GAP_MS = 1_500L
+    }
 }

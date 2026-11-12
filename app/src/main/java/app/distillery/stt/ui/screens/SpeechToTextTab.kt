@@ -100,6 +100,7 @@ fun SpeechToTextTab(
     var checking by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
+    val showTest = remember(settingsVersion) { app.settings.showSttTest }
     val activeModel = remember(settingsVersion, installed) {
         app.modelStore.resolveModel(app.settings.chosenModel)
     }
@@ -195,8 +196,11 @@ fun SpeechToTextTab(
                 NavRow("Transcribe a file", "Audio and video recordings, turned into text on your phone", R.drawable.ic_graphic_eq) {
                     context.startActivity(Intent(context, TranscribeActivity::class.java))
                 }
-                HorizontalDivider(Modifier.padding(horizontal = 20.dp))
-                NavRow("Test speech to text", "Dictation and recordings, the way apps call Distillery", R.drawable.ic_mic, onOpenTest)
+                // Hidden until revealed by tapping this tab's button eight times.
+                if (showTest) {
+                    HorizontalDivider(Modifier.padding(horizontal = 20.dp))
+                    NavRow("Test speech to text", "Dictation and recordings, the way apps call Distillery", R.drawable.ic_mic, onOpenTest)
+                }
             }
         }
     }
