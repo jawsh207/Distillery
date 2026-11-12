@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 // ListItem(headlineContent = …) and Slider(value = …) are deprecated on the
 // Material 3 1.6 line in favour of new overloads; they're kept here because they
 // exist on every 1.5.x release this app targets.
@@ -6,6 +6,9 @@
 
 package app.distillery.stt.ui.screens
 
+import android.content.Intent
+import androidx.compose.material3.HorizontalDivider
+import app.distillery.stt.transcribe.TranscribeActivity
 import android.Manifest
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -209,6 +212,10 @@ fun SpeechToTextTab(
         // ---------------------------------------------------------------- more
         item {
             NavGroup {
+                NavRow("Transcribe a file", "Audio and video recordings, turned into text on your phone", R.drawable.ic_graphic_eq) {
+                    context.startActivity(Intent(context, TranscribeActivity::class.java))
+                }
+                HorizontalDivider(Modifier.padding(horizontal = 20.dp))
                 NavRow("Test speech to text", "Dictation and recordings, the way apps call Distillery", R.drawable.ic_mic, onOpenTest)
             }
         }

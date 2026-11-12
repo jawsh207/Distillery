@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 package app.distillery.stt.ui.screens
 
 import app.distillery.stt.feature.TtsFeature
@@ -25,7 +25,7 @@ object OssLicenses {
             listOf(
                 OssComponent(
                     "distillery", "Distillery", "Copyright © 2026 the Distillery contributors",
-                    "GPL-3.0-or-later", "GPL-3.0.txt",
+                    "Apache-2.0", "Apache-2.0.txt",
                 ),
             ),
         ),

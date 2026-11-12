@@ -9,6 +9,9 @@ Speech is recognized entirely on your phone with Moonshine, an open-source speec
 <li>Live partial results while you speak, then the final text</li>
 <li>Stops on its own when you pause</li>
 <li>Transcribes recordings other apps hand over: AMR, M4A/3GP, MP3, Ogg, FLAC, WAV</li>
+<li>Transcribe audio and video files: share one to Distillery, then copy, share or save the text</li>
+<li>Read aloud from any app: select text and choose Read aloud, with pause, skip and speed controls</li>
+<li>Save speech as an M4A or WAV file</li>
 <li>Choose Tiny, Small or Medium to trade speed for accuracy</li>
 <li>Material 3 Expressive design that follows your wallpaper colors</li>
 <li>Text to speech with 28 American and British English voices</li>
@@ -18,6 +21,6 @@ Speech is recognized entirely on your phone with Moonshine, an open-source speec
 </ul>
 
 <b>Open source</b>
-Distillery is licensed under the GPL-3.0. Moonshine and the English streaming models are MIT-licensed; Kokoro and its voices are Apache-2.0. Distillery never downloads models under non-open-source licenses.
+Distillery is licensed under the Apache License 2.0. Moonshine and the English streaming models are MIT-licensed; Kokoro and its voices are Apache-2.0. Distillery never downloads models under non-open-source licenses.
 
 Requires Android 16. English only for now.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 #
 # Checks that an APK carries the ONNX Runtime it should: Distillery's own build
 # (the checksums in third_party/onnxruntime/libraries.properties) once there

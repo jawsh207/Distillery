@@ -1,0 +1,9 @@
+Distillery
+Copyright 2026 the Distillery contributors
+
+Licensed under the Apache License, Version 2.0 (see LICENSE). Versions up to
+and including 0.2.2 were released under the GNU General Public License,
+version 3 or later, and remain available under it.
+
+Third-party components and their licenses are listed in the app (About and
+open-source licenses) and their texts are in app/src/main/assets/licenses/.

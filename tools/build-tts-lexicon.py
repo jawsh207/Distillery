@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 """Builds Distillery's English pronunciation lexicons from misaki.
 
 misaki (github.com/hexgrad/misaki, Apache-2.0) is the G2P that Kokoro was

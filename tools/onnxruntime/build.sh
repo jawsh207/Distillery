@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 #
 # Builds Distillery's ONNX Runtime from source: version 1.23.2 (the one
 # Moonshine's library is linked against), cut down to the operators in

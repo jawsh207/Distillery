@@ -1,10 +1,11 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 // Slider(value = …) is deprecated on the Material 3 1.6 line; kept because it
 // exists on every 1.5.x release this app targets.
 @file:Suppress("DEPRECATION")
 
 package app.distillery.stt.feature
 
+import app.distillery.stt.tts.read.ReadAloudActivity
 import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -219,6 +220,12 @@ fun TextToSpeechTab(onOpenDownloads: () -> Unit, onNavigate: (String) -> Unit, o
         // ---------------------------------------------------------------- more
         item(key = "tts-more") {
             NavGroup {
+                NavRow(
+                    "Read aloud",
+                    "Paste text to hear it, or choose Read aloud when you select text in any app",
+                    R.drawable.ic_play,
+                ) { context.startActivity(Intent(context, ReadAloudActivity::class.java)) }
+                HorizontalDivider(Modifier.padding(horizontal = 20.dp))
                 NavRow(
                     "Pronunciations",
                     "Fix how a word or name is said",

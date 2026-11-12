@@ -72,7 +72,7 @@ jobs:
         run: |
           python3 tools/tts-data.py
           git config user.name jawsh207
-          git config user.email jawsh@tuta.com
+          git config user.email 76641448+jawsh207@users.noreply.github.com
           git add app/src/main/assets/tts tts-data
           git diff --cached --quiet && { echo "No changes"; exit 0; }
           git commit -m "Text to speech: regenerate the stand-ins and word guessers"

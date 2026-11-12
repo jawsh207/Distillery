@@ -1,6 +1,10 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 package app.distillery.stt.ui
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -16,13 +20,21 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val openRoute = if (savedInstanceState == null) intent?.getStringExtra(EXTRA_OPEN) else null
+        if (savedInstanceState == null) openRoute = intent?.getStringExtra(EXTRA_OPEN)
         setContent {
             DistilleryTheme {
-                DistilleryNavHost(openRoute = openRoute)
+                DistilleryNavHost(openRoute = openRoute, onOpened = { openRoute = null })
             }
         }
     }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        intent.getStringExtra(EXTRA_OPEN)?.let { openRoute = it }
+    }
+
+    /** A screen another part of the app asked to open, until it's shown. */
+    private var openRoute by mutableStateOf<String?>(null)
 
     companion object {
         /** Optional screen to open on launch, e.g. from another part of the app. */

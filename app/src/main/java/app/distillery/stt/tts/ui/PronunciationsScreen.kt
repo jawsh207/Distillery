@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 // ListItem(headlineContent = …) is deprecated on the Material 3 1.6 line; it's
 // kept because it exists on every 1.5.x release this app targets.
 @file:Suppress("DEPRECATION")

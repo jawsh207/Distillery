@@ -14,4 +14,10 @@
     <string name="notification_needs_mic_body">An app asked for voice input. Open Distillery to allow the microphone.</string>
     <string name="notification_needs_model">Distillery has no speech model yet</string>
     <string name="notification_needs_model_body">Open Distillery to download one. Voice input works offline after that.</string>
+    <string name="channel_work">Transcription and audio files</string>
+    <string name="channel_work_description">Progress while Distillery transcribes a file or saves speech as audio</string>
+    <string name="channel_read_aloud">Read aloud</string>
+    <string name="channel_read_aloud_description">Playback controls while Distillery reads text aloud</string>
+    <string name="action_transcribe">Transcribe</string>
+    <string name="action_read_aloud">Read aloud</string>
 </resources>

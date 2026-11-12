@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 """Makes the stand-in files that let Moonshine's speech engine start without
 its own English pronunciation data.
 

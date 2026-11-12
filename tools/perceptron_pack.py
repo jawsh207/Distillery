@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 """Packs a perceptron model into the binary form the app loads quickly.
 
 Text models took seconds to parse on a phone, so the tagger and word guesser

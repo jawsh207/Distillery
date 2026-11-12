@@ -17,9 +17,14 @@ English Kokoro voices, for any app that reads text aloud; see [Text to speech](#
 - Recording transcription: AMR, AAC/M4A/3GP, MP3, Ogg Opus/Vorbis, FLAC, WAV or raw PCM.
 - Moonshine English streaming models: **Tiny**, **Small** (default) or **Medium**.
 - Text to speech with 28 English Kokoro voices, read aloud on the phone, for any app.
+- **Transcribe** audio and video files: share one to Distillery, open it with Distillery, or pick
+  it in the app; copy, share or save the text, with optional timestamps.
+- **Read aloud** from anywhere: choose Read aloud when you select text in any app, share text to
+  Distillery, or paste it in. Pause, skip and jump between sentences, change voice and speed, keep
+  listening with the screen off, and save the speech as M4A or WAV.
 - Material 3 Expressive UI with the system's dynamic colors.
 - Android 16+ (minSdk 36), Kotlin, Jetpack Compose. Package `app.distillery.stt`.
-- GPL-3.0-or-later. Every dependency and model is OSI-licensed; all licenses are shown in the app.
+- Apache-2.0. Every dependency and model is OSI-licensed; all licenses are shown in the app.
 
 ## Using Distillery from another app
 
@@ -233,9 +238,9 @@ See [docs/BUILDING.md](docs/BUILDING.md), including the from-source build for F-
 
 ## License
 
-Distillery is free software: you can redistribute it and/or modify it under the terms of the GNU
-General Public License as published by the Free Software Foundation, either version 3 of the License,
-or (at your option) any later version. See [LICENSE](LICENSE).
+Distillery is licensed under the [Apache License, Version 2.0](LICENSE); see also [NOTICE](NOTICE).
+Versions up to and including 0.2.2 were released under the GNU General Public License, version 3 or
+later, and remain available under it.
 
 Third-party licenses are listed in the app (Licenses screen) and their texts are in
 `app/src/main/assets/licenses/`.

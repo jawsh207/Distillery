@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 """Lists the ONNX Runtime operators Distillery's models use.
 
 Distillery's ONNX Runtime is built with only these operators

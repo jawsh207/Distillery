@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 """Writes the manifest of the pronunciation data the app downloads.
 
 The lexicons, heteronym lists, word guessers and part-of-speech tagger in

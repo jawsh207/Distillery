@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 package app.distillery.stt.ui
 
 import androidx.compose.runtime.Composable
@@ -31,7 +31,7 @@ private object Routes {
  * @param openRoute a screen to open on launch; [TtsFeature.VOICES_ROUTE] opens the Downloads tab.
  */
 @Composable
-fun DistilleryNavHost(openRoute: String? = null) {
+fun DistilleryNavHost(openRoute: String? = null, onOpened: () -> Unit = {}) {
     val nav = rememberNavController()
     val back: () -> Unit = { nav.popBackStack() }
     val navigate: (String) -> Unit = { route -> nav.navigate(route) }
@@ -44,7 +44,15 @@ fun DistilleryNavHost(openRoute: String? = null) {
         nav.popBackStack(Routes.MAIN, inclusive = false)
     }
     LaunchedEffect(openRoute) {
-        if (openRoute != null && TtsFeature.handlesRoute(openRoute)) nav.navigate(openRoute)
+        when {
+            openRoute == null -> return@LaunchedEffect
+            openRoute == TtsFeature.VOICES_ROUTE -> {
+                requestedTab = MainTab.Downloads
+                nav.popBackStack(Routes.MAIN, inclusive = false)
+            }
+            TtsFeature.handlesRoute(openRoute) -> nav.navigate(openRoute)
+        }
+        onOpened()
     }
     NavHost(navController = nav, startDestination = Routes.MAIN) {
         composable(Routes.MAIN) {
