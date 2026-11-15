@@ -8,6 +8,12 @@ import org.junit.Test
 import java.io.File
 import java.security.MessageDigest
 
+/**
+ * Checks the downloadable pronunciation data: the manifest in the app matches the
+ * files in tts-data/ byte for byte, every accent's files are listed in it, only
+ * files whose checksum was verified count as present, and removing the last
+ * voice of an accent keeps the tagger the other accent still uses.
+ */
 class PronunciationDataTest {
 
     private val manifest = File("src/main/assets/tts/data.properties").inputStream().use {

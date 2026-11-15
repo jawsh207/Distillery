@@ -4,6 +4,11 @@ package app.distillery.stt.service
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
+/**
+ * Checks how Distillery recognises a recording another app hands over: common
+ * formats (AMR, M4A/3GP, MP3, Ogg, FLAC, WAV) are told apart by their first bytes,
+ * and raw PCM is never mistaken for a container.
+ */
 class ContainerSignatureTest {
 
     private fun bytes(vararg values: Int) = ByteArray(values.size) { values[it].toByte() }

@@ -6,6 +6,11 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+/**
+ * Checks how dictated phrases are put together into the text sent to an app:
+ * the open phrase is revised in place, phrases are joined in order, empty ones
+ * are skipped, spacing is tidied, and an unchanged text isn't reported again.
+ */
 class TranscriptBufferTest {
 
     @Test

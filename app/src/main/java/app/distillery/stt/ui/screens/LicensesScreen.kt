@@ -36,12 +36,18 @@ import app.distillery.stt.ui.components.DistilleryScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+/**
+ * The About and open-source licenses screen: Distillery's own license, then
+ * every library, model and data set it uses or downloads, grouped, each with its
+ * license. Tapping one opens LicenseTextScreen with the full license text from
+ * assets/licenses/.
+ */
 @Composable
 fun LicensesScreen(onBack: () -> Unit, onOpen: (String) -> Unit) {
     DistilleryScreen(title = "Licenses", subtitle = "Distillery ${BuildConfig.VERSION_NAME} · free and open source", onBack = onBack) {
         item {
             BodyText(
-                "Distillery is free software under the GNU General Public License, version 3 or later. " +
+                "Distillery is free software under the Apache License 2.0. " +
                     "Every library and model it uses is open source; tap one to read its license.",
             )
         }
@@ -78,6 +84,7 @@ fun LicensesScreen(onBack: () -> Unit, onOpen: (String) -> Unit) {
     }
 }
 
+/** The full text of one license, as shipped in assets/licenses/. */
 @Composable
 fun LicenseTextScreen(id: String, onBack: () -> Unit) {
     val context = LocalContext.current

@@ -8,6 +8,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
+/**
+ * Checks the rules for which voice files Distillery will download: only English
+ * Kokoro voices from Moonshine's own host and paths (never ZipVoice or Piper, or
+ * other languages), the voice file itself must be there, and deleting one voice
+ * keeps the files other voices share.
+ */
 class TtsLicensePolicyTest {
 
     @get:Rule val tmp = TemporaryFolder()

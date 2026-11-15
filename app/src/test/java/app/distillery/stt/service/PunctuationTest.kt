@@ -4,6 +4,12 @@ package app.distillery.stt.service
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
+/**
+ * Checks punctuation handling in dictation results: the closing mark is trimmed
+ * where an app asks (partial results, searches), everything is stripped when the
+ * user turns punctuation off, and marks inside words and numbers ("don't",
+ * "3.5") are kept.
+ */
 class PunctuationTest {
 
     @Test fun trimsTheClosingMark() {

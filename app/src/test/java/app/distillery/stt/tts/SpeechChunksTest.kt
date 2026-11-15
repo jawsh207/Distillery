@@ -4,6 +4,11 @@ package app.distillery.stt.tts
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
+/**
+ * Checks how text is cut into pieces for Kokoro: a long first sentence starts
+ * with just its first clause so speech begins sooner, short sentences stay whole,
+ * and Kokoro's own silence is trimmed to the set pause.
+ */
 class SpeechChunksTest {
 
     @Test fun longFirstSentenceStartsWithItsFirstClause() {

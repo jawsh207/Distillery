@@ -11,6 +11,18 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import app.distillery.stt.ui.MainActivity
 
+/**
+ * Every notification Distillery shows, and the channels they belong to:
+ * - Downloads: progress while a speech model, voice or pronunciation data
+ *   downloads.
+ * - Attention: when dictation can't start because the microphone isn't allowed
+ *   or no speech model is downloaded; tapping opens the app to fix it.
+ * - Transcription and audio files: progress while a file is transcribed or
+ *   speech is saved as audio, and a note when it's done (only if the screen
+ *   isn't showing).
+ * - Read aloud: the playback controls shown while text is read aloud
+ *   (ReadAloudService builds that one).
+ */
 internal object Notifications {
 
     private const val CHANNEL_DOWNLOADS = "downloads"

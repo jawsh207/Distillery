@@ -4,6 +4,12 @@ package app.distillery.stt.tts
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
+/**
+ * Checks how text is rewritten the way it's spoken before pronouncing it:
+ * numbers, money, percentages, dates and date ranges, times, phone numbers,
+ * units, fractions, abbreviations and acronyms, emails and links, Roman
+ * numerals, list markers and dashes, with ordinary text left as it is.
+ */
 class TextNormalizerTest {
 
     private val cases = listOf(

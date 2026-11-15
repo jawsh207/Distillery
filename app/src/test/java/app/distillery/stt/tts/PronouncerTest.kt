@@ -4,6 +4,12 @@ package app.distillery.stt.tts
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
+/**
+ * Checks how words become Kokoro phonemes: regular endings on dictionary words,
+ * custom pronunciations taking priority (with one main stress), guesses for
+ * unknown words, and whole sentences keeping their punctuation and choosing how
+ * to say "the" and "a".
+ */
 class PronouncerTest {
 
     private val lexicon = Lexicon(

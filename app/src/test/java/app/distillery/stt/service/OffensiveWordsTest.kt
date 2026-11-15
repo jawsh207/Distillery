@@ -5,6 +5,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.File
 
+/**
+ * Checks offensive-word masking: whole words are masked to their first letter
+ * and asterisks, as Android does; longer words that merely contain one are left
+ * alone; and the word list shipped in the app loads.
+ */
 class OffensiveWordsTest {
 
     private val words = OffensiveWords(listOf("shit", "ass", "fuck", "two girls one cup"))

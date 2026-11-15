@@ -7,6 +7,11 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+/**
+ * Checks when dictation stops by itself: after a set time if nobody speaks, after
+ * a pause that follows a finished phrase (never in the middle of one), no sooner
+ * than the minimum length an app asks for, and always at the hard cap.
+ */
 class EndpointerTest {
 
     private fun feed(e: Endpointer, ms: Long, stepMs: Long = 20): Decision {

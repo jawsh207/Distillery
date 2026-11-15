@@ -7,6 +7,12 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+/**
+ * Checks the rules for which speech models Distillery will download: only
+ * English streaming models under the MIT license, only from Moonshine's own
+ * download host over HTTPS, only from the requested model's own folder, and never
+ * a path that climbs out of it.
+ */
 class ModelLicensePolicyTest {
 
     @Test
