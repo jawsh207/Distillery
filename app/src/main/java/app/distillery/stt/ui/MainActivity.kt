@@ -12,9 +12,11 @@ import androidx.activity.enableEdgeToEdge
 import app.distillery.stt.ui.theme.DistilleryTheme
 
 /**
- * The app UI: setup, model downloads, a SpeechRecognizer test bench and
- * licenses. Also the settings activity Android links to from the voice input
- * picker and from Distillery's App info page.
+ * The app's main screen: the Speech to text, Text to speech and Downloads
+ * tabs, and the screens they open (tests, pronunciations, licenses). Also the
+ * settings activity Android links to from the voice input picker and from
+ * Distillery's App info page. Other parts of the app open a tab here with
+ * [EXTRA_OPEN], even while it's already running.
  */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

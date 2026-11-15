@@ -41,7 +41,7 @@ import app.distillery.stt.ui.screens.DownloadsTab
 import app.distillery.stt.ui.screens.SpeechToTextTab
 import kotlinx.coroutines.launch
 
-/** The app's sections. Outlined icons, filled while the tab is selected, as in Contacts and Dialtone. */
+/** The app's sections. Outlined icons, filled while the tab is selected, as Material 3 recommends. */
 enum class MainTab(val label: String, @DrawableRes val icon: Int, @DrawableRes val selectedIcon: Int) {
     SpeechToText("Speech to text", R.drawable.ic_mic_outline, R.drawable.ic_mic),
     TextToSpeech("Text to speech", R.drawable.ic_volume_up_outline, R.drawable.ic_volume_up),

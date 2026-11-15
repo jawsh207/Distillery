@@ -12,6 +12,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # Every source file describes itself (CONTRIBUTING.md); fail fast if not.
+      - name: Check every file is described
+        run: python3 tools/check-docs.py
+
       - uses: actions/setup-java@v5
         with:
           distribution: temurin

@@ -12,7 +12,7 @@ import androidx.work.workDataOf
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-/** What the Models screen shows for one model's download. */
+/** Where one model's or voice's download stands, as the Downloads tab shows it. */
 sealed interface DownloadState {
     data object Idle : DownloadState
     data object Waiting : DownloadState

@@ -236,6 +236,11 @@ See [docs/BUILDING.md](docs/BUILDING.md), including the from-source build for F-
 ./gradlew testDebugUnitTest
 ```
 
+## How it works
+
+[docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md) explains what Distillery does and where, in plain
+language. To change the code, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## License
 
 Distillery is licensed under the [Apache License, Version 2.0](LICENSE); see also [NOTICE](NOTICE).
