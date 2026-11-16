@@ -1,0 +1,2 @@
+New in Transcribe: label who's speaking (Speaker 1, Speaker 2…) in interviews and meetings, after a one-time 8.6 MB download. Save transcripts as SRT subtitles as well as text.
+Fixed: the licenses screen now says Distillery is under the Apache License 2.0.
