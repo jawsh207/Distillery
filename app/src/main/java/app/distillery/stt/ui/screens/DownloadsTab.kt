@@ -5,6 +5,17 @@
 
 package app.distillery.stt.ui.screens
 
+import app.distillery.stt.ui.components.Tone
+import app.distillery.stt.ui.components.SectionCard
+import app.distillery.stt.engine.SpeakerModel
+import app.distillery.stt.engine.DownloadState
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.AlertDialog
 import android.text.format.Formatter
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
@@ -65,7 +76,8 @@ fun DownloadsTab(onOpenLicenses: () -> Unit) {
     val voices by tts.store.installed.collectAsStateWithLifecycle()
     val settingsVersion by app.settings.changes.collectAsStateWithLifecycle(0)
     val wifiOnly = remember(settingsVersion) { app.settings.wifiOnlyDownloads }
-    val modelBytes = remember(models) { models.sumOf { app.modelStore.bytesOnDisk(it) } }
+    val speakers by app.speakerModel.installed.collectAsStateWithLifecycle()
+    val modelBytes = remember(models, speakers) { models.sumOf { app.modelStore.bytesOnDisk(it) } + app.speakerModel.bytesOnDisk() }
     val voiceBytes = remember(voices) { if (voices.isEmpty()) 0L else tts.store.bytesOnDisk() }
 
     // Open until something in the section is downloaded, then folded away.
@@ -144,6 +156,7 @@ fun DownloadsTab(onOpenLicenses: () -> Unit) {
                     modifier = Modifier.padding(horizontal = 4.dp),
                 )
             }
+            item(key = "speakers") { SpeakerModelItem() }
         }
 
         // -------------------------------------------------------------- voices
@@ -224,4 +237,53 @@ private fun VoiceGroupLabel(text: String) {
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(start = 4.dp, top = 4.dp),
     )
+}
+
+/** The optional speaker models, for labelling who's speaking in Transcribe. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun SpeakerModelItem() {
+    val context = LocalContext.current
+    val app = context.applicationContext as DistilleryApplication
+    val installed by app.speakerModel.installed.collectAsStateWithLifecycle()
+    val state by remember { app.speakerDownloads.state() }.collectAsStateWithLifecycle(DownloadState.Idle)
+    var confirmDelete by remember { mutableStateOf(false) }
+    SectionCard(
+        title = SpeakerModel.DISPLAY_NAME,
+        icon = R.drawable.ic_graphic_eq,
+        tone = if (installed) Tone.Good else Tone.Neutral,
+    ) {
+        BodyText(
+            "Lets Transcribe tell speakers apart (Speaker 1, Speaker 2…) in interviews and meetings. " +
+                "pyannote community-1 · ${SpeakerModel.SIZE_LABEL} · ${SpeakerModel.LICENSE}",
+        )
+        when (val s = state) {
+            is DownloadState.Running -> {
+                if (s.fraction != null) LinearWavyProgressIndicator(progress = { s.fraction }, modifier = Modifier.fillMaxWidth())
+                else LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth())
+                TextButton(onClick = app.speakerDownloads::cancel) { Text("Cancel") }
+            }
+            DownloadState.Waiting -> {
+                BodyText(if (app.settings.wifiOnlyDownloads) "Waiting for Wi-Fi…" else "Waiting for a connection…")
+                TextButton(onClick = app.speakerDownloads::cancel) { Text("Cancel") }
+            }
+            else -> {
+                if (s is DownloadState.Failed) BodyText(s.message)
+                if (installed) {
+                    OutlinedButton(onClick = { confirmDelete = true }, shapes = ButtonDefaults.shapes()) { Text("Delete") }
+                } else {
+                    FilledTonalButton(onClick = app.speakerDownloads::start, shapes = ButtonDefaults.shapes()) { Text("Download") }
+                }
+            }
+        }
+    }
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text("Delete speaker labels?") },
+            text = { Text("Transcribe won't be able to label speakers until you download them again.") },
+            confirmButton = { TextButton(onClick = { confirmDelete = false; app.speakerModel.delete() }) { Text("Delete") } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Keep") } },
+        )
+    }
 }

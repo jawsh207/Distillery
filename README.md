@@ -17,8 +17,9 @@ English Kokoro voices, for any app that reads text aloud; see [Text to speech](#
 - Recording transcription: AMR, AAC/M4A/3GP, MP3, Ogg Opus/Vorbis, FLAC, WAV or raw PCM.
 - Moonshine English streaming models: **Tiny**, **Small** (default) or **Medium**.
 - Text to speech with 28 English Kokoro voices, read aloud on the phone, for any app.
-- **Transcribe** audio and video files: share one to Distillery, open it with Distillery, or pick
-  it in the app; copy, share or save the text, with optional timestamps.
+- **Transcribe** audio and video files: share one to Distillery or pick it in the app; label who's
+  speaking (Speaker 1, Speaker 2…); copy, share, or save as text or SRT subtitles, with optional
+  timestamps.
 - **Read aloud** from anywhere: choose Read aloud when you select text in any app, share text to
   Distillery, or paste it in. Pause, skip and jump between sentences, change voice and speed, keep
   listening with the screen off, and save the speech as M4A or WAV.
@@ -193,6 +194,10 @@ explicit allowlist, and `ModelLicensePolicy` rejects any download manifest that 
 
 Models aren't bundled. The app downloads the one you pick (Wi-Fi only by default) into
 `noBackupFilesDir`, using Moonshine's resumable downloader. Network access exists only for this.
+
+Speaker labels in Transcribe use pyannote's community-1 segmentation and speaker-embedding models
+(CC BY 4.0, 8.6 MB), an optional download from `download.moonshine.ai/model/diarization-community1/`.
+The download is refused unless it is exactly those two files from that folder (`SpeakerModel`).
 
 ## Text to speech
 

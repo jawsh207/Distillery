@@ -44,6 +44,11 @@ object OssLicenses {
                     "model-medium", "Moonshine Medium Streaming (English)", "Moonshine AI · 245M parameters",
                     "MIT", "MIT-moonshine.txt",
                 ),
+                OssComponent(
+                    "speakers", "pyannote community-1 speaker models",
+                    "pyannote.ai · speaker labels in Transcribe; their clustering data is built into Moonshine",
+                    "CC-BY-4.0", "CC-BY-4.0.txt",
+                ),
             ),
         ),
         OssGroup(
@@ -93,7 +98,7 @@ object OssLicenses {
                 OssComponent(
                     "ldnoobw", "List of Dirty, Naughty, Obscene, and Otherwise Bad Words (English)",
                     "Shutterstock and contributors · for masking offensive words",
-                    "CC-BY-4.0", "CC-BY-4.0-ldnoobw.txt",
+                    "CC-BY-4.0", "CC-BY-4.0.txt",
                 ),
             ),
         ),

@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 package app.distillery.stt.transcribe
 
+import app.distillery.stt.engine.SpeakerModel
+import app.distillery.stt.engine.DownloadState
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.AlertDialog
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -61,7 +65,8 @@ import app.distillery.stt.ui.components.Tone
 import app.distillery.stt.ui.theme.DistilleryTheme
 
 /**
- * Turns an audio or video file into text. Reached by sharing a file to
+ * Turns an audio or video file into text, optionally labelling who's speaking,
+ * and saves it as text or SRT subtitles. Reached by sharing a file to
  * Distillery, or from the Speech to text tab.
  */
 class TranscribeActivity : ComponentActivity() {
@@ -199,7 +204,7 @@ private fun TranscribeScreen(initial: Uri?, onDiscard: () -> Unit, onBack: () ->
                                 Text("Timestamps", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                                 Switch(checked = timestamps, onCheckedChange = { timestamps = it })
                             }
-                            TranscriptActions(name = s.name, text = text, onDiscard = discard)
+                            TranscriptActions(name = s.name, text = text, subtitles = { FileTranscription.srt(s.segments) }, onDiscard = discard)
                         }
                     }
                 }
@@ -239,10 +244,12 @@ private fun TranscribeScreen(initial: Uri?, onDiscard: () -> Unit, onBack: () ->
                                 )
                             }
                         }
+                        SpeakerLabelsRow()
                         Button(
                             onClick = {
                                 val m = model ?: return@Button
-                                if (!FileTranscription.start(context, file, name ?: "the file", m)) {
+                                val speakers = app.settings.labelSpeakers && app.speakerModel.isInstalled()
+                                if (!FileTranscription.start(context, file, name ?: "the file", m, speakers)) {
                                     Toast.makeText(context, "Wait for ${otherJob?.title?.lowercase() ?: "the current job"} to finish", Toast.LENGTH_LONG).show()
                                 } else {
                                     picked = null
@@ -263,18 +270,37 @@ private fun TranscribeScreen(initial: Uri?, onDiscard: () -> Unit, onBack: () ->
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class)
 @Composable
-private fun TranscriptActions(name: String, text: String, onDiscard: () -> Unit) {
+private fun TranscriptActions(name: String, text: String, subtitles: () -> String, onDiscard: () -> Unit) {
     val context = LocalContext.current
-    val save = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
-        if (uri != null) {
-            runCatching {
-                context.contentResolver.openOutputStream(uri)!!.use { it.write(text.toByteArray()) }
-            }.onSuccess {
-                Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
-            }.onFailure {
-                Toast.makeText(context, "Couldn't save: ${it.message}", Toast.LENGTH_LONG).show()
-            }
+    var askFormat by remember { mutableStateOf(false) }
+    fun write(uri: Uri?, content: String) {
+        if (uri == null) return
+        runCatching {
+            context.contentResolver.openOutputStream(uri, "wt")!!.use { it.write(content.toByteArray()) }
+        }.onSuccess {
+            Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
+        }.onFailure {
+            Toast.makeText(context, "Couldn't save: ${it.message}", Toast.LENGTH_LONG).show()
         }
+    }
+    val saveText = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { write(it, text) }
+    val saveSrt = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/x-subrip")) {
+        write(it, subtitles())
+    }
+    val base = name.substringBeforeLast('.')
+    if (askFormat) {
+        AlertDialog(
+            onDismissRequest = { askFormat = false },
+            icon = { Icon(painterResource(R.drawable.ic_save), contentDescription = null) },
+            title = { Text("Save the transcript") },
+            text = { Text("As text, or as SRT subtitles, timed to the recording, for video players and editors.") },
+            confirmButton = {
+                TextButton(onClick = { askFormat = false; saveText.launch("$base.txt") }) { Text("Text") }
+            },
+            dismissButton = {
+                TextButton(onClick = { askFormat = false; saveSrt.launch("$base.srt") }) { Text("Subtitles") }
+            },
+        )
     }
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         FilledTonalButton(onClick = {
@@ -293,7 +319,7 @@ private fun TranscriptActions(name: String, text: String, onDiscard: () -> Unit)
             Icon(painterResource(R.drawable.ic_share), contentDescription = null, modifier = Modifier.size(18.dp))
             Text("Share", modifier = Modifier.padding(start = 8.dp))
         }
-        FilledTonalButton(onClick = { save.launch(name.substringBeforeLast('.') + ".txt") }, shapes = ButtonDefaults.shapes()) {
+        FilledTonalButton(onClick = { askFormat = true }, shapes = ButtonDefaults.shapes()) {
             Icon(painterResource(R.drawable.ic_save), contentDescription = null, modifier = Modifier.size(18.dp))
             Text("Save", modifier = Modifier.padding(start = 8.dp))
         }
@@ -318,4 +344,42 @@ internal fun openDownloads(context: Context) {
             .putExtra(MainActivity.EXTRA_OPEN, TtsFeature.VOICES_ROUTE)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
     )
+}
+
+/**
+ * The "Label speakers" switch. Without the speaker models it offers their
+ * download here, so nobody has to go to the Downloads tab first.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun SpeakerLabelsRow() {
+    val context = LocalContext.current
+    val app = context.applicationContext as DistilleryApplication
+    val installed by app.speakerModel.installed.collectAsStateWithLifecycle()
+    val download by remember { app.speakerDownloads.state() }.collectAsStateWithLifecycle(DownloadState.Idle)
+    val settingsVersion by app.settings.changes.collectAsStateWithLifecycle(0)
+    val on = remember(settingsVersion) { app.settings.labelSpeakers }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text("Label speakers", style = MaterialTheme.typography.bodyLarge)
+            Text(
+                when {
+                    installed -> "Speaker 1, Speaker 2… Slower, best for interviews and meetings"
+                    download is DownloadState.Running || download is DownloadState.Waiting -> "Downloading speaker labels…"
+                    download is DownloadState.Failed -> (download as DownloadState.Failed).message
+                    else -> "Needs a ${SpeakerModel.SIZE_LABEL} download, once"
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        when {
+            installed -> Switch(checked = on, onCheckedChange = { app.settings.labelSpeakers = it })
+            download is DownloadState.Running || download is DownloadState.Waiting -> TextButton(onClick = app.speakerDownloads::cancel) { Text("Cancel") }
+            else -> TextButton(onClick = {
+                app.settings.labelSpeakers = true
+                app.speakerDownloads.start()
+            }) { Text("Download") }
+        }
+    }
 }

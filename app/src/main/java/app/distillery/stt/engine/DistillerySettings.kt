@@ -50,6 +50,11 @@ class DistillerySettings(context: Context) {
         get() = prefs.getBoolean(KEY_MASK_OFFENSIVE, true)
         set(value) = prefs.edit().putBoolean(KEY_MASK_OFFENSIVE, value).apply()
 
+    /** Label who's speaking when transcribing a file (needs the speaker models). */
+    var labelSpeakers: Boolean
+        get() = prefs.getBoolean(KEY_LABEL_SPEAKERS, false)
+        set(value) = prefs.edit().putBoolean(KEY_LABEL_SPEAKERS, value).apply()
+
     /**
      * Show the Test rows, which most people never need. Revealed by tapping a
      * tab's own button eight times in a row ([MainTabs]); the same again hides them.
@@ -86,6 +91,7 @@ class DistillerySettings(context: Context) {
         private const val KEY_PUNCTUATION = "punctuation"
         private const val KEY_MASK_OFFENSIVE = "mask_offensive_words"
         private const val KEY_SHOW_STT_TEST = "show_stt_test"
+        private const val KEY_LABEL_SPEAKERS = "label_speakers"
         private const val KEY_SHOW_TTS_TEST = "show_tts_test"
 
         const val DEFAULT_PAUSE_MS = 1_000L

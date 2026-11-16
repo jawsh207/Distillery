@@ -37,7 +37,13 @@ Speech to text tab. Android's own decoders read the file, so common formats work
 Opus, FLAC, WAV, AMR, and the sound of MP4, WebM and 3GP videos). It uses its own copy of the
 speech model, so it never holds up dictation in other apps, and it keeps going when you switch apps,
 with its progress in a notification. The text is split into paragraphs at long pauses, can show a
-timestamp for each, and can be copied, shared, saved as a text file or discarded.
+timestamp for each, and can be copied, shared, saved or discarded. Saving offers plain text or SRT
+subtitles, timed to the recording, for video players and editors.
+
+*Label speakers* tells the voices in a recording apart and marks each turn "Speaker 1",
+"Speaker 2" and so on, in the order they first speak, starting a new paragraph at each change. It
+uses two small speaker models (8.6 MB, downloaded once, from the Transcribe screen or the Downloads
+tab) and makes transcribing slower, so it's off until you turn it on.
 
 ## Text to speech
 
@@ -80,12 +86,15 @@ Wi-Fi only* setting (on by default).
 
 - **Speech models** (Tiny, Small, Medium) come from Moonshine's download site. Bigger is more
   accurate but slower and needs more memory.
+- **Speaker labels** (pyannote's community-1 speaker models, 8.6 MB) come from Moonshine's download
+  site, only if you want Transcribe to label speakers.
 - **Voices** come from Moonshine's download site too. The first voice also brings the Kokoro model
   (about 90 MB); each voice after that is small.
 - **Pronunciation data** (the dictionary, guesser and grammar tagger for each accent, about 5 MB)
   comes with the first voice of each accent, from Distillery's own GitHub releases.
 
-Before anything downloads, Distillery checks it's allowed: only English models and voices, only
+Before anything downloads, Distillery checks it's allowed: only English models and voices (and the
+two speaker models, from their own folder), only
 under open licenses, only from those two places, and the pronunciation data must match the
 checksums built into the app. Deleting the last voice of an accent deletes that accent's data.
 
@@ -114,7 +123,8 @@ Paths are under `app/src/main/java/app/distillery/stt/`.
 | Dictation for other apps | `service/DistilleryRecognitionService.kt`, `service/RecognitionSession.kt` |
 | Text to speech for other apps | `tts/DistilleryTtsService.kt`, `tts/KokoroSynth.kt` |
 | How words are said | `tts/TextNormalizer.kt`, `tts/Pronouncer.kt` |
-| Transcribing a file | `transcribe/FileTranscription.kt`, `transcribe/AudioDecoder.kt` |
+| Transcribing a file, speaker labels and subtitles | `transcribe/FileTranscription.kt`, `transcribe/AudioDecoder.kt` |
+| Speaker models (download and checks) | `engine/SpeakerModel.kt` |
 | Reading aloud and saving audio | `tts/read/ReadAloud.kt`, `tts/read/ReadAloudService.kt`, `tts/read/AudioExport.kt` |
 | Downloads and what's allowed | `engine/ModelDownloadWorker.kt`, `engine/ModelLicensePolicy.kt`, `tts/VoiceDownloads.kt`, `tts/TtsLicensePolicy.kt`, `tts/PronunciationData.kt` |
 | Notifications | `Notifications.kt` |

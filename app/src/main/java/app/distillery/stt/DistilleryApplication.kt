@@ -5,6 +5,8 @@ import android.app.Application
 import androidx.work.WorkManager
 import app.distillery.stt.engine.ModelDownloads
 import app.distillery.stt.engine.ModelStore
+import app.distillery.stt.engine.SpeakerModelDownloads
+import app.distillery.stt.engine.SpeakerModelStore
 import app.distillery.stt.engine.SpeechEngine
 import app.distillery.stt.engine.DistillerySettings
 import app.distillery.stt.service.OffensiveWords
@@ -32,6 +34,11 @@ class DistilleryApplication : Application() {
         private set
     lateinit var downloads: ModelDownloads
         private set
+    /** The optional speaker identification models, for Transcribe's speaker labels. */
+    lateinit var speakerModel: SpeakerModelStore
+        private set
+    lateinit var speakerDownloads: SpeakerModelDownloads
+        private set
 
     /** The offensive-word list, loaded the first time a result is masked. */
     internal val offensiveWords: OffensiveWords by lazy { assets.open(OffensiveWords.ASSET).use { OffensiveWords.load(it) } }
@@ -46,6 +53,8 @@ class DistilleryApplication : Application() {
         modelStore = ModelStore(File(noBackupFilesDir, "models"))
         engine = SpeechEngine(modelStore)
         downloads = ModelDownloads(this, settings)
+        speakerModel = SpeakerModelStore(File(noBackupFilesDir, "speakers"))
+        speakerDownloads = SpeakerModelDownloads(this, settings)
         Notifications.createChannels(this)
 
         anyDownloadActive = WorkManager.getInstance(this)

@@ -10,6 +10,7 @@ Speech is recognized entirely on your phone with Moonshine, an open-source speec
 <li>Stops on its own when you pause</li>
 <li>Transcribes recordings other apps hand over: AMR, M4A/3GP, MP3, Ogg, FLAC, WAV</li>
 <li>Transcribe audio and video files: share one to Distillery, then copy, share or save the text</li>
+<li>Label who's speaking in interviews and meetings, and save transcripts as SRT subtitles</li>
 <li>Read aloud from any app: select text and choose Read aloud, with pause, skip and speed controls</li>
 <li>Save speech as an M4A or WAV file</li>
 <li>Choose Tiny, Small or Medium to trade speed for accuracy</li>
