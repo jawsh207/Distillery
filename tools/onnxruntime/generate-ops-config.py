@@ -11,6 +11,8 @@ load, so it is made from the models themselves:
     lists for them;
   * Kokoro, every ONNX Runtime file the catalog lists for each voice, less the
     English pronunciation files Distillery replaces with its stand-ins;
+  * the speaker identification models (pyannote community-1), downloaded for
+    Transcribe's speaker labels;
   * the stand-in pronunciation model (app/src/main/assets/tts/standin/model.ort);
   * the Silero voice activity detector compiled into Moonshine's library.
 
@@ -54,6 +56,7 @@ def ort_urls(manifest_json):
 
 def catalog_urls():
     from moonshine_voice.moonshine_api import (
+        moonshine_get_diarization_dependencies_string,
         moonshine_get_stt_dependencies_string,
         moonshine_get_tts_dependencies_string,
     )
@@ -61,6 +64,10 @@ def catalog_urls():
     urls = set()
     for arch in STT_ARCHS.values():
         urls.update(ort_urls(moonshine_get_stt_dependencies_string("en", {"model_arch": arch})))
+    diarization = ort_urls(moonshine_get_diarization_dependencies_string())
+    if len(diarization) != 2:
+        raise SystemExit(f"Expected the two speaker models, got {diarization}")
+    urls.update(diarization)
     voices = re.findall(r'^\s+[A-Z_]+\("([a-z]{2}_[a-z]+)"', KOKORO_VOICES.read_text(), re.MULTILINE)
     if not voices:
         raise SystemExit(f"No voices found in {KOKORO_VOICES}")

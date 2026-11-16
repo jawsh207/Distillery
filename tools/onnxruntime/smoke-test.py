@@ -5,7 +5,7 @@
 Moonshine's Linux library (from `pip install moonshine-voice`) is pointed at
 the runtime built for Linux from the same operator list as the Android one,
 then made to do what the app does: transcribe a recording with each English
-streaming model, and speak from phonemes with Kokoro, its English
+streaming model (once more with speaker labels), and speak from phonemes with Kokoro, its English
 pronunciation files replaced by Distillery's stand-ins. A missing operator
 fails here, when the model loads, rather than on a phone.
 
@@ -64,7 +64,7 @@ def main():
     args = ap.parse_args()
     use_runtime(args.runtime)
 
-    from moonshine_voice.download import get_model_for_language
+    from moonshine_voice.download import get_diarization_model, get_model_for_language
     from moonshine_voice.moonshine_api import ModelArch
     from moonshine_voice.transcriber import Transcriber
     from moonshine_voice.tts import TextToSpeech
@@ -83,6 +83,20 @@ def main():
                 failures.append(f"{arch.name}: too little text")
         except Exception as e:  # noqa: BLE001
             failures.append(f"{arch.name}: {e}")
+
+    # Speaker labels, as Transcribe does them: the tiny model with the speaker models.
+    try:
+        speakers = get_diarization_model(cache_root=args.cache / "speakers")
+        path, arch = get_model_for_language("en", ModelArch.TINY_STREAMING, cache_root=args.cache / "stt")
+        options = {"identify_speakers": "true", "diarization_model_dir": str(speakers)}
+        with Transcriber(path, arch, options=options) as transcriber:
+            transcript = transcriber.transcribe_without_streaming(audio, rate)
+        spans = [s for line in transcript.lines for s in (getattr(line, "speaker_spans", None) or [])]
+        print(f"speaker labels: {len(transcript.lines)} lines, {len(spans)} speaker spans")
+        if not spans:
+            failures.append("speaker labels: no speaker spans")
+    except Exception as e:  # noqa: BLE001
+        failures.append(f"speaker labels: {e}")
 
     root = args.cache / "tts"
     for path, name in STANDINS.items():

@@ -134,7 +134,7 @@ jobs:
           python3 tools/onnxruntime/smoke-test.py --runtime ort/libonnxruntime.so \
             --wav "$RUNNER_TEMP/moonshine/test-assets/beckett.wav" --cache "$RUNNER_TEMP/smoke" 2>&1 | tee smoke.log \
             || { echo "::error title=Smoke test::$(grep -v fetching smoke.log | tail -30 | tr '\n' '|')"; exit 1; }
-          echo "::notice title=Smoke test::$(grep -E 'STREAMING|kokoro_' smoke.log | tr '\n' '|')"
+          echo "::notice title=Smoke test::$(grep -E 'STREAMING|kokoro_|speaker labels' smoke.log | tr '\n' '|')"
 
   publish:
     needs: [config, smoke-test]
