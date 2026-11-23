@@ -67,6 +67,23 @@ class ModelLicensePolicyTest {
     }
 
     @Test
+    fun acceptsFilesListedAsObjects() {
+        val base = "https://download.moonshine.ai/model/tiny-streaming-en/q"
+        val json = """{"groups":[{"base_url":"$base","files":[
+            {"name":"encoder.ort","url":"$base/encoder.ort","size":123,"checksum":"","checksum_type":""},
+            {"name":"adapter.ort","url":"$base/adapter.ort","size":null,"checksum":"","checksum_type":""}]}]}"""
+        assertEquals(2, ModelLicensePolicy.verifyManifest(SttModel.TINY, json))
+    }
+
+    @Test(expected = ModelPolicyException::class)
+    fun rejectsAFileObjectPointingElsewhere() {
+        val base = "https://download.moonshine.ai/model/tiny-streaming-en/q"
+        val json = """{"groups":[{"base_url":"$base","files":[
+            {"name":"encoder.ort","url":"https://example.com/encoder.ort","size":1,"checksum":"","checksum_type":""}]}]}"""
+        ModelLicensePolicy.verifyManifest(SttModel.TINY, json)
+    }
+
+    @Test
     fun englishTags() {
         assertTrue(RecognitionRequest.isEnglishTag(null))
         assertTrue(RecognitionRequest.isEnglishTag("en"))

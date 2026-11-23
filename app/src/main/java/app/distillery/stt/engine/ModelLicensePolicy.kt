@@ -60,17 +60,38 @@ object ModelLicensePolicy {
             val group = groups.getJSONObject(g)
             val baseUrl = group.optString("base_url")
             verifyBaseUrl(model, baseUrl)
-            val files = group.optJSONArray("files")
-                ?: throw ModelPolicyException("Manifest group has no files")
-            for (f in 0 until files.length()) {
-                val name = files.getString(f)
-                if (name.isBlank() || name.startsWith("/") || name.split('/').any { it == ".." }) {
-                    throw ModelPolicyException("Unexpected file name in manifest: $name")
-                }
-                fileCount++
-            }
+            fileCount += manifestFiles(group).size
         }
         return fileCount
+    }
+
+    /**
+     * The files a manifest group lists, by name. Moonshine writes each one either
+     * as a plain name or as an object (`{"name":…, "url":…, "size":…}`); an
+     * object's own URL must sit directly under the group's base URL, so it can't
+     * send the download anywhere the base URL check didn't approve.
+     */
+    internal fun manifestFiles(group: JSONObject): List<String> {
+        val baseUrl = group.optString("base_url").trimEnd('/')
+        val files = group.optJSONArray("files") ?: throw ModelPolicyException("Manifest group has no files")
+        return (0 until files.length()).map { f ->
+            val name = when (val entry = files.get(f)) {
+                is String -> entry
+                is JSONObject -> {
+                    val name = entry.optString("name")
+                    val url = entry.optString("url")
+                    if (url.isNotEmpty() && url != "$baseUrl/$name") {
+                        throw ModelPolicyException("Manifest file $name points at $url, not $baseUrl/$name")
+                    }
+                    name
+                }
+                else -> throw ModelPolicyException("Unexpected entry in manifest: $entry")
+            }
+            if (name.isBlank() || name.startsWith("/") || name.split('/').any { it == ".." }) {
+                throw ModelPolicyException("Unexpected file name in manifest: $name")
+            }
+            name
+        }
     }
 
     internal fun verifyBaseUrl(model: SttModel, baseUrl: String) {

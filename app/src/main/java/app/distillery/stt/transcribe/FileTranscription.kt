@@ -318,6 +318,7 @@ object FileTranscription {
 
     private fun message(e: Throwable): String = when (e) {
         is UnsupportedAudioException -> e.message ?: "Android can't decode this file"
+        is android.media.MediaCodec.CodecException -> "Android's audio decoder failed on this file. Convert it to M4A or MP3, or pick another file."
         is OutOfMemoryError -> "Ran out of memory. Try a smaller model."
         is UnsatisfiedLinkError -> "The speech engine couldn't start"
         else -> e.message?.takeIf { it.isNotBlank() } ?: e::class.java.simpleName

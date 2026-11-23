@@ -70,8 +70,7 @@ object SpeakerModel {
             ) {
                 throw ModelPolicyException("Speaker models must come from https://${ModelLicensePolicy.CDN_HOST}/model/$FOLDER")
             }
-            val files = group.optJSONArray("files") ?: throw ModelPolicyException("Manifest group has no files")
-            for (f in 0 until files.length()) names += files.getString(f)
+            names += ModelLicensePolicy.manifestFiles(group)
         }
         if (names != FILES) throw ModelPolicyException("Unexpected speaker model files: $names")
     }
