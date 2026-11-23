@@ -1,0 +1,2 @@
+Fixed: Speaker labels in Transcribe can now be downloaded.
+Transcribe now tries every audio track in a video until it finds one the phone can decode, and if none works, says which audio format the phone can't play instead of showing "CodecException".
